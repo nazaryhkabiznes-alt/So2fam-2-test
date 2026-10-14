@@ -1,0 +1,3284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SO2fam - Global Standoff 2 Clan Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-dark: #121316;
+            --bg-panel: rgba(26, 28, 32, 0.96);
+            --bg-card: rgba(33, 36, 41, 0.94);
+            --bg-card-hover: rgba(42, 46, 53, 0.98);
+            --accent-gray: #8b929a;
+            --accent-gold: #f39c12;
+            --accent-gold-glow: rgba(243, 156, 18, 0.25);
+            --text-main: #f5f6f8;
+            --text-muted: #858c94;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --border-color: #2c2f36;
+            --border-gold: #d35400;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        input, textarea, select {
+            user-select: text;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100dvh;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+            position: fixed;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #snow-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            z-index: 10;
+            overflow-y: auto;
+            opacity: 1;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .screen.hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 380px;
+            background-image: linear-gradient(rgba(26, 28, 32, 0.95), rgba(26, 28, 32, 0.99)), url('https://vsacaavjrsocaejksacr.supabase.co/storage/v1/object/public/musik/hd_ea54070ef7cde72b48fc8719a2703f53.jpg');
+            background-size: cover;
+            background-position: center;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            margin: auto;
+            animation: scaleInModal 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleInModal {
+            from { transform: scale(0.92); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        h1, h2, h3 {
+            color: var(--text-main);
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 11.5px;
+            line-height: 1.35;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .creator-watermark {
+            position: fixed;
+            bottom: calc(56px + env(safe-area-inset-bottom));
+            right: 8px;
+            font-size: 8.5px;
+            color: var(--accent-gold);
+            z-index: 999;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #282a30, #202227);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 10.5px;
+            cursor: pointer;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            margin: 5px 0;
+            width: 100%;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #32353d, #25282e);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 12px var(--accent-gold-glow);
+            transform: translateY(-1.5px);
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #f39c12, #d35400);
+            color: #fff;
+            border: 1px solid #f1c40f;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #c0392b, #962d22);
+            border-color: #e74c3c;
+            color: #fff;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            background: rgba(20, 21, 24, 0.95);
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 11.5px;
+            margin-bottom: 8px;
+            outline: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 8px var(--accent-gold-glow);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            background: rgba(18, 19, 22, 0.92);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+            text-align: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+            display: none !important;
+        }
+
+        .spinner-dots {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .spinner-dots div {
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: bounceDot 0.55s infinite alternate ease-in-out;
+            box-shadow: 0 0 10px var(--accent-gold);
+        }
+
+        .spinner-dots div:nth-child(2) { animation-delay: 0.18s; }
+        .spinner-dots div:nth-child(3) { animation-delay: 0.36s; }
+
+        @keyframes bounceDot {
+            from { transform: translateY(0); opacity: 0.4; }
+            to { transform: translateY(-10px); opacity: 1; }
+        }
+
+        .bottom-nav {
+            display: flex;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border-color);
+            height: calc(52px + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 50;
+            box-shadow: 0 -4px 18px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+
+        .nav-indicator {
+            position: absolute;
+            top: 0;
+            height: 2.5px;
+            background: var(--accent-gold);
+            box-shadow: 0 0 10px var(--accent-gold);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 33.333%;
+            left: 0%;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            outline: none;
+            position: relative;
+            transition: color 0.25s ease;
+        }
+
+        .nav-item svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            margin-bottom: 2px;
+        }
+
+        .nav-item.active {
+            color: var(--accent-gold);
+            background: rgba(243, 156, 18, 0.04);
+        }
+
+        .red-dot-indicator {
+            position: absolute;
+            top: 5px;
+            right: 32%;
+            width: 7px;
+            height: 7px;
+            background-color: var(--danger);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--danger);
+        }
+        .red-dot-indicator.hidden { display: none; }
+
+        .main-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            width: 100%;
+            height: calc(100dvh - 52px - env(safe-area-inset-bottom));
+            padding: 14px;
+            overflow-y: auto;
+            padding-bottom: 95px;
+        }
+
+        .view {
+            display: none !important;
+            opacity: 0;
+        }
+
+        .view.active {
+            display: block !important;
+            opacity: 1;
+            animation: fadeInView 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes fadeInView {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .clans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+            margin-top: 8px;
+            padding-bottom: 24px;
+        }
+
+        .clan-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 11px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clan-card:hover {
+            border-color: var(--accent-gold);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(243, 156, 18, 0.15);
+        }
+
+        .clan-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+            background: var(--bg-dark);
+            flex-shrink: 0;
+        }
+
+        .clan-info h4 {
+            color: var(--text-main);
+            font-size: 13.5px;
+            margin-bottom: 2px;
+            text-align: left;
+        }
+
+        .clan-info span {
+            color: var(--accent-gold);
+            font-size: 10px;
+            background: rgba(243, 156, 18, 0.12);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .top-bar-buttons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .gear-btn, .sound-toggle-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .gear-btn:hover, .sound-toggle-btn:hover { color: var(--accent-gold); border-color: var(--accent-gold); }
+        .gear-btn svg, .sound-toggle-btn svg { width: 15px; height: 15px; fill: currentColor; }
+        .sound-toggle-btn.muted { color: var(--danger); border-color: var(--danger); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 12px;
+            backdrop-filter: blur(6px);
+            overflow-y: auto;
+            animation: fadeInView 0.25s ease;
+        }
+
+        .modal-overlay.hidden { display: none !important; opacity: 0; pointer-events: none; }
+
+        .modal-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            margin: auto;
+            animation: scaleInModal 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .badge-tag {
+            display: inline-block;
+            background: rgba(23, 24, 28, 0.85);
+            color: var(--accent-gold);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .profile-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            text-align: center;
+            position: relative;
+            padding-bottom: 16px;
+        }
+
+        .profile-banner-container {
+            width: 100%;
+            height: 115px;
+            background: #17181c;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .profile-banner-container::after {
+            content: attr(data-txt);
+            position: absolute;
+            bottom: 6px;
+            right: 10px;
+            background: rgba(0,0,0,0.65);
+            color: var(--accent-gold);
+            font-size: 8.5px;
+            padding: 3px 7px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        .profile-avatar-circle {
+            width: 82px;
+            height: 82px;
+            border-radius: 50%;
+            border: 3px solid var(--bg-card);
+            object-fit: cover;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: -41px;
+            background: var(--bg-dark);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+
+        .profile-body {
+            padding: 48px 16px 16px 16px;
+        }
+
+        .global-logout-bottom-btn {
+            position: fixed;
+            bottom: calc(64px + env(safe-area-inset-bottom));
+            right: 14px;
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #2c2f36, #1a1c20);
+            border: 1.5px solid var(--accent-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(243, 156, 18, 0.4);
+            z-index: 998;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .global-logout-bottom-btn:hover {
+            transform: scale(1.1);
+            background: linear-gradient(135deg, #f39c12, #d35400);
+            border-color: #fff;
+            box-shadow: 0 0 20px var(--accent-gold);
+        }
+
+        .global-logout-bottom-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--accent-gold);
+            transition: fill 0.2s;
+        }
+
+        .global-logout-bottom-btn:hover svg {
+            fill: #fff;
+        }
+
+        .editable-name {
+            cursor: pointer;
+            border-bottom: 1px dashed var(--accent-gold);
+            display: inline-block;
+        }
+
+        .clan-detail-page {
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(18, 19, 22, 0.85), rgba(18, 19, 22, 0.92)), url('https://vsacaavjrsocaejksacr.supabase.co/storage/v1/object/public/musik/i_20261012_103014.webp');
+            background-size: cover;
+            background-position: center;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 90px;
+        }
+
+        .clan-detail-banner {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            background: #17181c;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .clan-detail-body {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .members-list {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 8px 0 14px 0;
+        }
+
+        .member-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(23, 24, 28, 0.85);
+            border: 1px solid var(--border-color);
+            padding: 6px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .member-chip:hover { border-color: var(--accent-gold); }
+
+        .member-chip img {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 5px;
+            flex-shrink: 0;
+        }
+
+        .status-indicator.online {
+            background-color: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            animation: pulseOnline 1.5s infinite ease-in-out;
+        }
+
+        .status-indicator.offline {
+            background-color: #e74c3c;
+            box-shadow: 0 0 6px rgba(231, 76, 60, 0.6);
+        }
+
+        @keyframes pulseOnline {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(46, 204, 113, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        .tg-chat-box {
+            background: rgba(23, 24, 28, 0.85);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            height: 260px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            scroll-behavior: smooth;
+        }
+
+        .tg-msg {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 11.5px;
+        }
+
+        .tg-msg img {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .tg-msg-bubble {
+            background: rgba(37, 40, 46, 0.9);
+            border: 1px solid var(--border-color);
+            padding: 8px 11px;
+            border-radius: 10px;
+            max-width: 84%;
+            word-break: break-word;
+        }
+
+        .tg-msg-author {
+            font-size: 10px;
+            color: var(--accent-gold);
+            margin-bottom: 2px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .action-buttons-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media(min-width: 480px) {
+            .action-buttons-group {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .copy-invite-css-btn {
+            background: linear-gradient(135deg, #25282e, #1a1c20);
+            border: 1px solid var(--accent-gold);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-weight: 600;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin: 0;
+            transition: all 0.2s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            outline: none;
+        }
+
+        .copy-invite-css-btn:hover {
+            background: linear-gradient(135deg, #32353d, #25282e);
+            border-color: #fff;
+            box-shadow: 0 0 12px var(--accent-gold-glow);
+        }
+
+        .copy-icon-svg {
+            width: 15px;
+            height: 15px;
+            fill: var(--accent-gold);
+            transition: fill 0.2s;
+        }
+
+        .copy-invite-css-btn:hover .copy-icon-svg {
+            fill: #fff;
+        }
+
+        #privacy-push {
+            position: fixed;
+            bottom: calc(70px + env(safe-area-inset-bottom));
+            left: 20px;
+            right: 20px;
+            max-width: 360px;
+            background: var(--bg-panel);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.85);
+            z-index: 9999;
+            backdrop-filter: blur(12px);
+            transform: translateY(30px);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
+            pointer-events: none;
+        }
+
+        #privacy-push:not(.hidden) {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+            display: block !important;
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: calc(65px + env(safe-area-inset-bottom));
+            right: 14px;
+            left: 14px;
+            max-width: 300px;
+            margin-left: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .toast-item {
+            background: var(--bg-panel);
+            border: 1px solid var(--accent-gold);
+            border-radius: 8px;
+            padding: 10px 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            animation: slideInToast 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes slideInToast {
+            from { transform: translateX(40px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="snow-canvas"></canvas>
+    
+    <audio id="bg-audio" loop preload="auto" crossorigin="anonymous" src="https://vsacaavjrsocaejksacr.supabase.co/storage/v1/object/public/musik/SVID_20261011_163849_1.mp3"></audio>
+
+    <div class="creator-watermark">@nazaros2009 (SO2fam 2026®)</div>
+
+    <div id="toast-container"></div>
+
+    <div id="global-loader" class="loading-overlay">
+        <div class="spinner-dots">
+            <div></div><div></div><div></div>
+        </div>
+        <p id="loader-text" style="color: var(--accent-gold); font-weight: 600; font-size: 11px; margin-top: 6px; letter-spacing: 0.8px;">ЗАГРУЗКА ИНТЕРФЕЙСА...</p>
+    </div>
+
+<div id="app">
+
+    <div id="screen-lang" class="screen">
+        <div class="auth-container">
+            <h2>SO2fam</h2>
+            <p>Выберите язык / Choose language</p>
+            <button class="btn btn-gold" onclick="setLanguage('ru')">Русский</button>
+            <button class="btn" onclick="setLanguage('en')">English</button>
+        </div>
+    </div>
+
+    <div id="screen-auth" class="screen hidden">
+        <div class="auth-container">
+            <h2 id="t-auth-title">Приветствие в SO2fam</h2>
+            <p id="t-auth-desc">Введите ваш игровой ID, имя и пароль для защиты аккаунта</p>
+            
+            <div style="display: flex; gap: 6px; margin-bottom: 12px; background: rgba(20,21,24,0.8); padding: 3px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <button id="auth-tab-login" class="btn btn-gold" style="margin:0; padding: 6px; font-size: 9.5px;" onclick="setAuthMode('login')">Вход</button>
+                <button id="auth-tab-reg" class="btn" style="margin:0; padding: 6px; font-size: 9.5px; background: transparent; border: none;" onclick="setAuthMode('register')">Регистрация</button>
+            </div>
+
+            <input type="text" id="auth-id" placeholder="Игровой ID (например: 123456789)" maxlength="15">
+            <input type="text" id="auth-name" placeholder="Имя пользователя" maxlength="25">
+            <input type="password" id="auth-pass" placeholder="Пароль аккаунта" maxlength="30">
+            <button class="btn btn-gold" id="t-auth-btn" onclick="handleAuthAction()">Войти в систему</button>
+            
+            <div id="auth-accounts-switcher" style="margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 10px; display: none;">
+                <p style="font-size: 9.5px; color: var(--accent-gold); margin-bottom: 6px;">СОХРАНЕННЫЕ АККАУНТЫ:</p>
+                <div id="auth-saved-accounts-list" style="display: flex; flex-direction: column; gap: 5px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-welcome-info" class="screen hidden">
+        <div class="auth-container" style="max-width: 400px;">
+            <h2 id="t-wel-title">Добро пожаловать</h2>
+            <p id="t-wel-text" style="text-align: left; font-size: 11.5px; line-height: 1.45;">Тут используются только настоящие кланы из игры Standoff 2.<br><br>
+            <b>Для чего нужен этот сайт:</b> Площадка создана для поиска проверенных кланов, подачи заявок на вступление, общения игроков и создания глобального сообщества без фейков.</p>
+            <button class="btn btn-gold" id="t-wel-btn" onclick="goToHubChoice()">Далее</button>
+        </div>
+    </div>
+
+    <div id="screen-hub-choice" class="screen hidden">
+        <div class="auth-container">
+            <h2 id="t-hub-title">Главное меню</h2>
+            <p id="t-hub-desc">Куда вы хотите перейти?</p>
+            <button class="btn btn-gold" id="t-hub-btn1" onclick="openMainApp()">Перейти на главную</button>
+            <button class="btn" id="t-hub-btn2" onclick="showCreateClanScreen()">Добавить свой клан</button>
+        </div>
+    </div>
+
+    <div id="screen-main" class="screen hidden" style="padding: 0; justify-content: flex-start;">
+        <div class="main-container">
+            <div class="main-content">
+                
+                <div id="view-feed" class="view active">
+                    <div class="top-bar">
+                        <h2 id="t-feed-title">Лента кланов Standoff 2</h2>
+                        <span style="font-size: 9.5px; color: var(--accent-gold); font-weight: 600; letter-spacing: 0.8px;">SO2FAM HUB</span>
+                    </div>
+                    <div id="clans-feed-list" class="clans-grid"></div>
+                </div>
+
+                <div id="view-clan-detail" class="view">
+                    <div id="clan-detail-content"></div>
+                </div>
+
+                <div id="view-notifications" class="view">
+                    <div class="top-bar">
+                        <h2 id="t-notif-title">Уведомления и заявки</h2>
+                    </div>
+                    <div id="notifications-list" style="max-width: 100%;">
+                        <p id="t-notif-empty">Нет новых уведомлений</p>
+                    </div>
+                </div>
+
+                <div id="view-profile" class="view">
+                    <div class="top-bar">
+                        <h2 id="profile-title-mode">Личный профиль</h2>
+                        <div class="top-bar-buttons">
+                            <button class="gear-btn" onclick="openChangelogModal()" title="Что нового (Changelog)">
+                                <span style="font-weight: bold; font-size: 13px; color: var(--accent-gold);">?</span>
+                            </button>
+                            <button id="sound-toggle-btn" class="sound-toggle-btn" onclick="toggleAudioMute()" title="Вкл/Выкл звук уведомлений">
+                                <svg id="sound-icon-svg" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                            </button>
+                            <button class="gear-btn" onclick="openAdminLoginModal()" title="Панель администратора">
+                                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c-.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="profile-card">
+                        <div class="profile-banner-container" id="profile-banner-box" data-txt="Изменить фото" onclick="triggerAvatarUpload()">
+                            <img id="profile-avatar-preview" src="https://via.placeholder.com/150/25282e/f39c12?text=SO2" class="profile-avatar-circle" alt="Profile Avatar" onclick="event.stopPropagation(); openMyPortfolio()">
+                        </div>
+                        <input type="file" id="hidden-avatar-input" accept="image/*" style="display:none;" onchange="handleAvatarFileSelect(this)">
+                        
+                        <div class="profile-body">
+                            <h3 style="margin-bottom: 2px; margin-top: 4px;">
+                                <span id="profile-display-name" class="editable-name" onclick="inlineEditName()" title="Нажмите, чтобы изменить имя">Игрок</span>
+                            </h3>
+                            <p id="profile-display-id" style="margin-bottom: 8px; color: var(--accent-gold); font-weight: bold; font-size: 10.5px;">ID: 000000000</p>
+
+                            <div style="margin-bottom: 10px; text-align: left; background: rgba(20,21,24,0.6); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                    <span id="t-bio-title" style="font-size: 9.5px; color: var(--accent-gold); font-weight: 600; letter-spacing: 0.4px;">ОПИСАНИЕ (ПОРТФОЛИО):</span>
+                                    <span id="t-bio-edit" style="font-size: 9.5px; cursor: pointer; color: var(--text-muted); font-weight: 600;" onclick="editUserBio()">[ИЗМЕНИТЬ]</span>
+                                </div>
+                                <p id="profile-display-bio" style="font-size: 11px; color: var(--text-main); margin: 0; word-break: break-word;">Нет описания...</p>
+                            </div>
+
+                            <div id="profile-clan-section"></div>
+
+                            <div id="admin-reserve-exit" style="margin-top: 10px; display: none;">
+                                <button class="btn btn-danger" id="t-exit-admin-btn" onclick="exitAdminReserveAccount()">Выйти из аккаунта администратора</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-create-clan" class="view">
+                    <div class="top-bar">
+                        <h2 id="t-create-title">Добавить свой клан</h2>
+                        <button class="btn" id="t-create-back" style="width: auto; padding: 5px 9px; margin:0; font-size: 9.5px;" onclick="openMainApp()">На главную</button>
+                    </div>
+                    <div class="profile-card" style="text-align: left; padding: 14px;">
+                        <p id="t-create-subtitle" style="text-align: left; margin-bottom: 8px; font-size: 11px;">Заполните информацию о клане для прохождения официальной модерации.</p>
+                        
+                        <label id="t-create-lbl1" style="font-size: 9.5px; color: var(--text-muted); display: block; margin-bottom: 3px;">1. Фотография клана (баннер):</label>
+                        <input type="file" id="clan-form-photo-file" accept="image/*">
+
+                        <input type="text" id="clan-form-name" placeholder="2. Название клана">
+                        <input type="text" id="clan-form-tag" placeholder="3. Тег клана (например: [FAM])">
+                        <textarea id="clan-form-desc" placeholder="Описание клана" rows="3"></textarea>
+                        <button class="btn btn-gold" id="t-create-submit" onclick="submitClanCreation()">Создать заявку [✓]</button>
+                    </div>
+                </div>
+
+                <div id="view-admin-panel" class="view">
+                    <div class="top-bar">
+                        <h2 id="t-admin-title">Панель администратора SO2fam</h2>
+                        <button class="btn btn-danger" style="width: auto; padding: 5px 9px; margin:0; font-size: 9.5px;" onclick="exitAdminReserveAccount()">Выйти</button>
+                    </div>
+                    <div id="admin-section-clans">
+                        <p id="t-admin-subtitle" style="text-align: left; margin-bottom: 8px;">Входящие заявки на создание кланов:</p>
+                        <div id="admin-requests-list">
+                            <p id="t-admin-empty" style="text-align: left;">Нет активных заявок</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Кнопка выхода -->
+            <button class="global-logout-bottom-btn" onclick="logoutAccount()" title="Выйти из аккаунта">
+                <svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+            </button>
+
+            <div class="bottom-nav">
+                <div id="nav-indicator" class="nav-indicator"></div>
+                <button class="nav-item active" onclick="switchView('feed', this, 0)">
+                    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                    <span id="nav-lbl-feed">Лента</span>
+                </button>
+                <button class="nav-item" onclick="switchView('notifications', this, 1)">
+                    <div id="notif-red-dot" class="red-dot-indicator hidden"></div>
+                    <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+                    <span id="nav-lbl-notif">Уведомления</span>
+                </button>
+                <button class="nav-item" onclick="switchView('profile', this, 2)">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span id="nav-lbl-profile">Профиль</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="privacy-push" class="hidden">
+        <h4 id="t-priv-title" style="color: var(--accent-gold); font-size: 12.5px; margin-bottom: 5px; text-align: left;">Конфиденциальность</h4>
+        <p id="t-priv-text" style="text-align: left; font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">Используя платформу SO2fam, вы соглашаетесь с правилами безопасности и конфиденциальности сообщества.</p>
+        <button class="btn btn-gold" style="padding: 6px 14px; font-size: 10.5px; margin: 0; width: auto;" onclick="closePrivacyPush()">ОК</button>
+    </div>
+
+    <!-- Модальное окно патчноута (Что нового v1.2.9) -->
+    <div id="changelog-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="max-width: 380px; text-align: left; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <h3 style="margin: 0; color: var(--accent-gold); font-size: 13px;">SO2fam v1.2.9 (Demo)</h3>
+                <span style="font-size: 12px; color: var(--text-muted); cursor: pointer; padding: 4px;" onclick="closeChangelogModal()">[✕]</span>
+            </div>
+            <p style="text-align: left; font-size: 11px; margin-bottom: 10px; color: var(--text-main); line-height: 1.4;">
+                Добро пожаловать в версию 1.2.9 (Demo)! Мы подготовили свежее обновление, которое делает проект еще быстрее, стабильнее и приятнее в использовании. Ниже подробно расписано всё, что изменилось в этой версии:
+            </p>
+            
+            <h4 style="font-size: 11.5px; color: var(--accent-gold); margin-top: 12px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Что нового в патче 1.2.9:</h4>
+            
+            <div style="margin-bottom: 10px; background: rgba(20,21,24,0.5); padding: 8px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <p style="text-align: left; font-size: 11px; font-weight: bold; color: var(--text-main); margin-bottom: 3px;">🐛 Исправление ошибок и стабильность</p>
+                <p style="text-align: left; font-size: 10.5px; color: var(--text-muted); margin: 0; line-height: 1.35;">Мы тщательно прошлись по коду, отловили и устранили множество неприятных багов. Теперь приложение работает стабильнее, неприятные вылеты и зависания остались в прошлом, а взаимодействие стало максимально плавным.</p>
+            </div>
+
+            <div style="margin-bottom: 10px; background: rgba(20,21,24,0.5); padding: 8px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <p style="text-align: left; font-size: 11px; font-weight: bold; color: var(--text-main); margin-bottom: 3px;">⚡ Оптимизация базы данных (БД)</p>
+                <p style="text-align: left; font-size: 10.5px; color: var(--text-muted); margin: 0; line-height: 1.35;">Проведена серьезная работа с бэкендом: мы ускорили запросы и оптимизировали структуру хранения данных. Теперь всё работает значительно быстрее — информация подгружается практически мгновенно, а отклик системы стал моментальным.</p>
+            </div>
+
+            <div style="margin-bottom: 14px; background: rgba(20,21,24,0.5); padding: 8px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <p style="text-align: left; font-size: 11px; font-weight: bold; color: var(--text-main); margin-bottom: 3px;">🎨 Частичное обновление интерфейса</p>
+                <p style="text-align: left; font-size: 10.5px; color: var(--text-muted); margin: 0; line-height: 1.35;">Мы освежили внешний вид некоторых ключевых элементов управления и экранов. Интерфейс стал выглядеть более современно и аккуратно, а пользоваться им стало удобнее и интуитивно понятнее на любых устройствах.</p>
+            </div>
+
+            <button class="btn btn-gold" onclick="closeChangelogModal()">Понятно [✓]</button>
+        </div>
+    </div>
+
+    <div id="user-portfolio-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="text-align: center; max-width: 320px;">
+            <img id="portfolio-avatar" src="" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-gold); margin-bottom: 8px;">
+            <h3 id="portfolio-name" style="margin-bottom: 3px;">Имя игрока</h3>
+            <p id="portfolio-id" style="color: var(--accent-gold); font-size: 10.5px; font-weight: bold; margin-bottom: 3px;">ID: 000000</p>
+            <p id="portfolio-status" style="font-size: 10.5px; font-weight: bold; margin-bottom: 8px;"></p>
+            
+            <div id="portfolio-clan-badge" style="display: none; background: rgba(243,156,18,0.08); border: 1px solid var(--accent-gold); padding: 7px; border-radius: 6px; margin-bottom: 8px; text-align: left;">
+                <span id="t-port-mini" style="font-size: 8.5px; color: var(--text-muted); display: block; margin-bottom: 2px;">МИНИ-КЛАН:</span>
+                <span id="portfolio-clan-text" style="color: var(--accent-gold); font-size: 11px; font-weight: bold;"></span>
+            </div>
+
+            <div style="background: rgba(20,21,24,0.7); padding: 9px; border-radius: 8px; border: 1px solid var(--border-color); text-align: left; margin-bottom: 12px;">
+                <span id="t-port-bio" style="font-size: 9px; color: var(--accent-gold); font-weight: 600; display: block; margin-bottom: 3px;">ОПИСАНИЕ ИГРОКА:</span>
+                <p id="portfolio-bio" style="font-size: 11px; color: var(--text-main); margin: 0; word-break: break-word;">Описание отсутствует.</p>
+            </div>
+            <button class="btn btn-gold" id="t-port-close" onclick="closePortfolioModal()">Закрыть</button>
+        </div>
+    </div>
+
+    <div id="edit-clan-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h2 id="t-edit-title">Редактирование клана</h2>
+            <p id="edit-clan-readonly-info" style="font-size: 10.5px; color: var(--accent-gold); margin-bottom: 8px; text-align: center;"></p>
+            <textarea id="edit-clan-desc" placeholder="Описание клана" rows="3"></textarea>
+            <label id="t-edit-lbl" style="font-size: 9.5px; color: var(--text-muted); display: block; margin-bottom: 3px;">Новый баннер (аватарка) клана:</label>
+            <input type="file" id="edit-clan-photo-file" accept="image/*">
+            <button class="btn btn-gold" id="t-edit-save" onclick="saveClanEdits()">Сохранить изменения</button>
+            <button class="btn" id="t-edit-cancel" onclick="closeEditClanModal()">Отмена</button>
+        </div>
+    </div>
+
+    <div id="site-alert-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="text-align: center;">
+            <h2>SO2fam</h2>
+            <p id="site-alert-text" style="margin-bottom: 12px;"></p>
+            <button class="btn btn-gold" onclick="closeSiteAlert()">ОК</button>
+        </div>
+    </div>
+
+    <div id="admin-login-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h2 id="t-adm-login-title">Вход администратора</h2>
+            <p id="t-adm-login-desc">Введите учетные данные для доступа к резервному аккаунту администратора</p>
+            <input type="text" id="admin-input-id" placeholder="ID администратора">
+            <input type="password" id="admin-input-pass" placeholder="Пароль администратора">
+            <button class="btn btn-gold" id="t-adm-login-btn" onclick="tryLoginAdmin()">Войти в аккаунт</button>
+            <button class="btn" id="t-adm-login-cancel" onclick="closeAdminLoginModal()">Отмена</button>
+        </div>
+    </div>
+
+    <div id="status-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="text-align: center;">
+            <h2 id="t-status-title">Статус заявки</h2>
+            <p id="t-status-text">Ваша заявка отправлена на модерацию администратору.</p>
+            <button class="btn btn-gold" id="t-status-btn" onclick="closeStatusModal()">Понятно</button>
+        </div>
+    </div>
+
+    <div id="admin-reject-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h2 id="t-rej-title">Отклонение заявки</h2>
+            <p id="t-rej-desc">Введите причину отклонения:</p>
+            <input type="text" id="reject-reason-input" placeholder="Например: Клан не найден в игре">
+            <button class="btn btn-danger" id="t-rej-btn" onclick="confirmRejectClan()">Отклонить заявку</button>
+            <button class="btn" id="t-rej-cancel" onclick="closeRejectModal()">Отмена</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('button, .btn, .nav-item, .gear-btn, .sound-toggle-btn');
+        if (target) {
+            playButtonBadgeClick();
+        }
+    });
+
+    const defaultAvatarsPool = [
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=SO2ProGamer1&backgroundColor=f39c12',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=StandoffLegend2&backgroundColor=e74c3c',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=CyberSniper3&backgroundColor=3498db',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=TacticalMaster4&backgroundColor=2ecc71',
+        'https://api.dicebear.com/7.x/avataaars/svg?seed=ViperSO25&backgroundColor=9b59b6'
+    ];
+
+    let soundMuted = false;
+    let clanMuteSettings = {};
+    let currentAuthMode = 'login';
+    let currentActiveView = 'feed';
+
+    function setAuthMode(mode) {
+        currentAuthMode = mode;
+        const btnLogin = document.getElementById('auth-tab-login');
+        const btnReg = document.getElementById('auth-tab-reg');
+        const authBtn = document.getElementById('t-auth-btn');
+
+        if (mode === 'login') {
+            btnLogin.className = 'btn btn-gold';
+            btnLogin.style.cssText = 'margin:0; padding: 6px; font-size: 9.5px;';
+            btnReg.className = 'btn';
+            btnReg.style.cssText = 'margin:0; padding: 6px; font-size: 9.5px; background: transparent; border: none;';
+            authBtn.innerText = currentLang === 'ru' ? 'Войти в систему' : 'Sign In';
+        } else {
+            btnReg.className = 'btn btn-gold';
+            btnReg.style.cssText = 'margin:0; padding: 6px; font-size: 9.5px;';
+            btnLogin.className = 'btn';
+            btnLogin.style.cssText = 'margin:0; padding: 6px; font-size: 9.5px; background: transparent; border: none;';
+            authBtn.innerText = currentLang === 'ru' ? 'Зарегистрироваться' : 'Register';
+        }
+    }
+
+    function handleAuthAction() {
+        if (currentAuthMode === 'login') {
+            loginUser();
+        } else {
+            registerUser();
+        }
+    }
+
+    function toggleAudioMute() {
+        soundMuted = !soundMuted;
+        const btn = document.getElementById('sound-toggle-btn');
+        const svg = document.getElementById('sound-icon-svg');
+        if (soundMuted) {
+            btn.classList.add('muted');
+            svg.innerHTML = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+            playButtonBadgeClick();
+            showToast('Звук', currentLang === 'ru' ? 'Звуковые уведомления отключены' : 'Sound notifications muted');
+        } else {
+            btn.classList.remove('muted');
+            svg.innerHTML = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+            playButtonBadgeClick();
+            showToast('Звук', currentLang === 'ru' ? 'Звуковые уведомления включены' : 'Sound notifications enabled');
+        }
+    }
+
+    function playButtonBadgeClick() {
+        if (soundMuted) return;
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!window._audioCtx) {
+                window._audioCtx = new AudioCtx();
+            }
+            if (window._audioCtx.state === 'suspended') {
+                window._audioCtx.resume();
+            }
+            const ctx = window._audioCtx;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.05);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.05);
+        } catch(e) {}
+    }
+
+    function toggleClanMute(clanId) {
+        playButtonBadgeClick();
+        if (clanMuteSettings[clanId]) {
+            clanMuteSettings[clanId] = false;
+            showToast('Уведомления клана', currentLang === 'ru' ? 'Уведомления для этого клана ВКЛЮЧЕНЫ' : 'Clan notifications ENABLED');
+        } else {
+            clanMuteSettings[clanId] = true;
+            showToast('Уведомления клана', currentLang === 'ru' ? 'Уведомления для этого клана ОТКЛЮЧЕНЫ' : 'Clan notifications MUTED');
+        }
+        openClanDetail(clanId);
+    }
+
+    let musicInitialized = false;
+    function initAndPlayAudio() {
+        const audio = document.getElementById('bg-audio');
+        if (!audio) return;
+        audio.volume = 0.25;
+
+        const unlockAndPlay = () => {
+            if (audio.paused && !soundMuted) {
+                audio.play().then(() => {
+                    musicInitialized = true;
+                }).catch(err => {});
+            }
+        };
+
+        window.addEventListener('click', unlockAndPlay, { once: true });
+        window.addEventListener('touchstart', unlockAndPlay, { once: true });
+    }
+
+    document.addEventListener('visibilitychange', function() {
+        const audio = document.getElementById('bg-audio');
+        if (!audio) return;
+        if (document.hidden) {
+            if (!audio.paused) {
+                audio.pause();
+                window._pausedByVisibility = true;
+            }
+        } else {
+            if (window._pausedByVisibility && !soundMuted) {
+                audio.play().catch(e => {});
+                window._pausedByVisibility = false;
+            }
+        }
+    });
+
+    // Увеличенная длительность и добавленная инстализация сервера
+    function showLoaderSequence(text1, text2, callback) {
+        const loader = document.getElementById('global-loader');
+        const loaderText = document.getElementById('loader-text');
+        loader.classList.remove('hidden');
+        
+        loaderText.innerText = text1;
+        setTimeout(() => {
+            loaderText.innerText = 'ИНСТАЛИЗАЦИЯ СЕРВЕРА...';
+            setTimeout(() => {
+                loaderText.innerText = text2;
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    if (callback) callback();
+                }, 1300);
+            }, 1300);
+        }, 1100);
+    }
+
+    function showSimpleLoader(text) {
+        const loader = document.getElementById('global-loader');
+        const loaderText = document.getElementById('loader-text');
+        loaderText.innerText = text || 'ЗАГРУЗКА...';
+        loader.classList.remove('hidden');
+    }
+
+    function hideLoader() {
+        document.getElementById('global-loader').classList.add('hidden');
+    }
+
+    function openChangelogModal() {
+        playButtonBadgeClick();
+        document.getElementById('changelog-modal').classList.remove('hidden');
+    }
+
+    function closeChangelogModal() {
+        playButtonBadgeClick();
+        document.getElementById('changelog-modal').classList.add('hidden');
+    }
+
+    function checkAndShowChangelogOnce() {
+        const seenVersion = localStorage.getItem('so2fam_seen_v1.2.9');
+        if (!seenVersion) {
+            setTimeout(() => {
+                openChangelogModal();
+                localStorage.setItem('so2fam_seen_v1.2.9', 'true');
+            }, 800);
+        }
+    }
+
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    const bgImg = new Image();
+    bgImg.crossOrigin = "anonymous";
+    bgImg.src = 'https://vsacaavjrsocaejksacr.supabase.co/storage/v1/object/public/musik/hd_ea54070ef7cde72b48fc8719a2703f53.jpg';
+
+    let bgLoaded = false;
+    bgImg.onload = function() {
+        bgLoaded = true;
+    };
+
+    function resizeBgCanvas() {
+        bgCanvas.width = window.innerWidth;
+        bgCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeBgCanvas);
+    resizeBgCanvas();
+
+    let glitchTimer = 0;
+    function renderDynamicBackground() {
+        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+        if (bgLoaded) {
+            glitchTimer++;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            if (glitchTimer % 180 === 0 || glitchTimer % 183 === 0) {
+                offsetX = (Math.random() - 0.5) * 8;
+                offsetY = (Math.random() - 0.5) * 6;
+            } else {
+                offsetX = Math.sin(glitchTimer * 0.03) * 3;
+                offsetY = Math.cos(glitchTimer * 0.02) * 2;
+            }
+
+            const hRatio = bgCanvas.width / bgImg.width;
+            const vRatio = bgCanvas.height / bgImg.height;
+            const ratio = Math.max(hRatio, vRatio);
+            
+            const drawWidth = bgImg.width * ratio;
+            const drawHeight = bgImg.height * ratio;
+            const drawX = (bgCanvas.width - drawWidth) / 2 + offsetX;
+            const drawY = (bgCanvas.height - drawHeight) / 2 + offsetY;
+
+            bgCtx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
+
+            bgCtx.fillStyle = 'rgba(18, 19, 22, 0.42)';
+            bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+            if (glitchTimer % 240 === 0) {
+                bgCtx.fillStyle = 'rgba(243, 156, 18, 0.08)';
+                const bandY = Math.random() * bgCanvas.height;
+                bgCtx.fillRect(0, bandY, bgCanvas.width, Math.random() * 20 + 5);
+            }
+        }
+
+        requestAnimationFrame(renderDynamicBackground);
+    }
+    renderDynamicBackground();
+
+    const snowCanvas = document.getElementById('snow-canvas');
+    const snowCtx = snowCanvas.getContext('2d');
+    let snowParticles = [];
+    const maxSnow = 60;
+
+    function resizeSnow() {
+        snowCanvas.width = window.innerWidth;
+        snowCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeSnow);
+    resizeSnow();
+
+    for (let i = 0; i < maxSnow; i++) {
+        snowParticles.push({
+            x: Math.random() * snowCanvas.width,
+            y: Math.random() * snowCanvas.height,
+            radius: Math.random() * 1.8 + 0.8,
+            speedY: Math.random() * 0.6 + 0.2,
+            speedX: (Math.random() - 0.5) * 0.3,
+            opacity: Math.random() * 0.6 + 0.2
+        });
+    }
+
+    function renderSnow() {
+        snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+        snowCtx.fillStyle = '#ffffff';
+        snowParticles.forEach(p => {
+            snowCtx.globalAlpha = p.opacity;
+            snowCtx.beginPath();
+            snowCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            snowCtx.fill();
+
+            p.y += p.speedY;
+            p.x += p.speedX;
+
+            if (p.y > snowCanvas.height) {
+                p.y = -5;
+                p.x = Math.random() * snowCanvas.width;
+            }
+            if (p.x > snowCanvas.width || p.x < 0) {
+                p.x = Math.random() * snowCanvas.width;
+            }
+        });
+        requestAnimationFrame(renderSnow);
+    }
+    renderSnow();
+
+    const SUPABASE_URL = 'https://vsacaavjrsocaejksacr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzYWNhYXZqcnNvY2FlamtzYWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NTIxOTYsImV4cCI6MjEwNzIyODE5Nn0.DuIXCly1Br5WgFqhXaDf8fg0pCYkHRmXFd5ugHpOoC0';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentLang = 'ru';
+
+    const dict = {
+        ru: {
+            loader: 'ЗАГРУЗКА...',
+            authTitle: 'Приветствие в SO2fam',
+            authDesc: 'Введите ваш игровой ID, имя и пароль для защиты аккаунта',
+            authIdPH: 'Игровой ID (например: 123456789)',
+            authNamePH: 'Имя пользователя',
+            authPassPH: 'Пароль аккаунта',
+            authBtn: 'Войти в систему',
+            welTitle: 'Добро пожаловать',
+            welText: 'Тут используются только настоящие кланы из игры Standoff 2.<br><br><b>Для чего нужен этот сайт:</b> Площадка создана для поиска проверенных кланов, подачи заявок на вступление, общения игроков и создания глобального сообщества без фейков.',
+            welBtn: 'Далее',
+            hubTitle: 'Главное меню',
+            hubDesc: 'Куда вы хотите перейти?',
+            hubBtn1: 'Перейти на главную',
+            hubBtn2: 'Добавить свой клан',
+            feedTitle: 'Лента кланов Standoff 2',
+            notifTitle: 'Уведомления и заявки',
+            notifEmpty: 'Нет новых уведомлений',
+            profileTitle: 'Личный профиль',
+            profileAdminTitle: 'Резервный аккаунт (Админ)',
+            bannerHover: 'Изменить фото',
+            bioTitle: 'ОПИСАНИЕ (ПОРТФОЛИО):',
+            bioEdit: '[ИЗМЕНИТЬ]',
+            bioDefault: 'Нет описания...',
+            exitAdmin: 'Выйти из аккаунта администратора',
+            createTitle: 'Добавить свой клан',
+            createBack: 'На главную',
+            createSub: 'Заполните информацию о клане для прохождения официальной модерации.',
+            createLbl1: '1. Фотография клана (баннер):',
+            createNamePH: '2. Название клана',
+            createTagPH: '3. Тег клана (например: [FAM])',
+            createDescPH: 'Описание клана',
+            createBtn: 'Создать заявку [✓]',
+            adminTitle: 'Панель администратора SO2fam',
+            adminSub: 'Входящие заявки на создание кланов:',
+            adminEmpty: 'Нет активных заявок',
+            navFeed: 'Лента',
+            navNotif: 'Уведомления',
+            navProfile: 'Профиль',
+            privTitle: 'Конфиденциальность',
+            privText: 'Используя платформу SO2fam, вы соглашаетесь с правилами безопасности и конфиденциальности сообщества.',
+            portMini: 'МИНИ-КЛАН:',
+            portBio: 'ОПИСАНИЕ ИГРОКА:',
+            portClose: 'Закрыть',
+            editTitle: 'Редактирование клана',
+            editLbl: 'Новый баннер (аватарка) клана:',
+            editSave: 'Сохранить изменения',
+            editCancel: 'Отмена',
+            admLoginTitle: 'Вход администратора',
+            admLoginDesc: 'Введите учетные данные для доступа к резервному аккаунту администратора',
+            admIdPH: 'ID администратора',
+            admPassPH: 'Пароль администратора',
+            admLoginBtn: 'Войти в аккаунт',
+            admLoginCancel: 'Отмена',
+            statusTitle: 'Статус заявки',
+            statusText: 'Ваша заявка отправлена на модерацию администратору.',
+            statusBtn: 'Понятно',
+            rejTitle: 'Отклонение заявки',
+            rejDesc: 'Введите причину отклонения:',
+            rejPH: 'Например: Клан не найден в игре',
+            rejBtn: 'Отклонить заявку',
+            rejCancel: 'Отмена',
+            toastReq: 'Заявка',
+            toastReqSent: 'Заявка на вступление успешно отправлена создателю клана!',
+            toastClanUpd: 'Клан',
+            toastClanSaved: 'Аватар и описание клана успешно обновлены!',
+            toastProfileUpd: 'Профиль',
+            toastProfileSaved: 'Фото профиля успешно обновлено!',
+            toastBioSaved: 'Описание успешно обновлено!',
+            toastMod: 'Модерация',
+            toastApproved: 'одобрен и создан!',
+            toastRejected: 'Заявка на клан отклонена.',
+            toastJoinAcc: 'Заявка одобрена!',
+            toastJoinRej: 'Заявка отклонена.',
+            btnLeave: 'Покинуть клан',
+            btnGoClan: 'Перейти в клан',
+            btnJoin: 'Подать заявку на вступление',
+            btnAccept: '[ПРИНЯТЬ]',
+            btnReject: '[ОТКЛОНИТЬ]',
+            lockChat: '[ЛЕНТА ЗАБЛОКИРОВАНА] История чата и сообщения доступны только подтвержденным участникам клана. Подайте заявку на вступление.',
+            noMembers: 'Нет участников',
+            noChat: 'Нет сообщений в чате',
+            chatPlaceholder: 'Написать сообщение в чат клана...',
+            chatSend: 'Отправить',
+            roleOwner: 'Создатель клана',
+            roleMember: 'Участник клана'
+        },
+        en: {
+            loader: 'LOADING...',
+            authTitle: 'Welcome to SO2fam',
+            authDesc: 'Enter your game ID, username and password',
+            authIdPH: 'Game ID (e.g., 123456789)',
+            authNamePH: 'Username',
+            authPassPH: 'Account password',
+            authBtn: 'Sign In',
+            welTitle: 'Welcome',
+            welText: 'Only real clans from Standoff 2 are featured here.<br><br><b>Why this site:</b> A platform to find verified clans, apply for membership, chat with players, and build a global community without fakes.',
+            welBtn: 'Next',
+            hubTitle: 'Main Menu',
+            hubDesc: 'Where would you like to go?',
+            hubBtn1: 'Go to Main Feed',
+            hubBtn2: 'Add Your Clan',
+            feedTitle: 'Standoff 2 Clan Feed',
+            notifTitle: 'Notifications & Requests',
+            notifEmpty: 'No new notifications',
+            profileTitle: 'Personal Profile',
+            profileAdminTitle: 'Reserve Account (Admin)',
+            bannerHover: 'Change Photo',
+            bioTitle: 'BIO (PORTFOLIO):',
+            bioEdit: '[EDIT]',
+            bioDefault: 'No description...',
+            exitAdmin: 'Exit Admin Account',
+            createTitle: 'Add Your Clan',
+            createBack: 'Main Page',
+            createSub: 'Fill in clan information to pass official moderation.',
+            createLbl1: '1. Clan Photo (Banner):',
+            createNamePH: '2. Clan Name',
+            createTagPH: '3. Clan Tag (e.g., [FAM])',
+            createDescPH: 'Clan Description',
+            createBtn: 'Submit Request [✓]',
+            adminTitle: 'SO2fam Admin Panel',
+            adminSub: 'Incoming clan creation requests:',
+            adminEmpty: 'No active requests',
+            navFeed: 'Feed',
+            navNotif: 'Notifications',
+            navProfile: 'Profile',
+            privTitle: 'Privacy',
+            privText: 'By using SO2fam, you agree to community safety and privacy rules.',
+            portMini: 'MINI-CLAN:',
+            portBio: 'PLAYER BIO:',
+            portClose: 'Close',
+            editTitle: 'Edit Clan',
+            editLbl: 'New Clan Banner:',
+            editSave: 'Save Changes',
+            editCancel: 'Cancel',
+            admLoginTitle: 'Admin Login',
+            admLoginDesc: 'Enter credentials for admin reserve account',
+            admIdPH: 'Admin ID',
+            admPassPH: 'Admin Password',
+            admLoginBtn: 'Login',
+            admLoginCancel: 'Cancel',
+            statusTitle: 'Request Status',
+            statusText: 'Your request has been sent to admin for moderation.',
+            statusBtn: 'Got it',
+            rejTitle: 'Reject Request',
+            rejDesc: 'Enter rejection reason:',
+            rejPH: 'E.g.: Clan not found in game',
+            rejBtn: 'Reject Request',
+            rejCancel: 'Cancel',
+            toastReq: 'Request',
+            toastReqSent: 'Join request successfully sent to clan owner!',
+            toastClanUpd: 'Clan',
+            toastClanSaved: 'Clan avatar and description updated!',
+            toastProfileUpd: 'Profile',
+            toastProfileSaved: 'Profile photo updated successfully!',
+            toastBioSaved: 'Bio updated successfully!',
+            toastMod: 'Moderation',
+            toastApproved: 'successfully approved and created!',
+            toastRejected: 'Clan request rejected.',
+            toastJoinAcc: 'Join request approved!',
+            toastJoinRej: 'Join request rejected.',
+            btnLeave: 'Leave Clan',
+            btnGoClan: 'Go to Clan',
+            btnJoin: 'Apply for Membership',
+            btnAccept: '[ACCEPT]',
+            btnReject: '[REJECT]',
+            lockChat: '[CHAT LOCKED] Chat history and messages are available only to verified clan members. Please apply to join.',
+            noMembers: 'No members',
+            noChat: 'No messages in chat',
+            chatPlaceholder: 'Type a message to clan chat...',
+            chatSend: 'Send',
+            roleOwner: 'Clan Creator',
+            roleMember: 'Clan Member'
+        }
+    };
+
+    const badWords = [
+        'хуй', 'пизд', 'еб', 'сук', 'бля', 'мраз', 'чмо', 'уеб', 'аху', 'епта', 
+        'блять', 'сука', 'гондон', 'пидор', 'педик', 'шлюх', 'трах', 'залуп', 
+        'fuck', 'shit', 'bitch', 'ass', 'dick', 'cunt', 'pussy', 'whore', 'slut', 'bastard'
+    ];
+
+    function containsProfanity(text) {
+        if (!text) return false;
+        const lower = text.toLowerCase();
+        return badWords.some(word => lower.includes(word));
+    }
+
+    function updateLanguageUI() {
+        const d = dict[currentLang];
+        document.getElementById('t-auth-title').innerText = d.authTitle;
+        document.getElementById('t-auth-desc').innerText = d.authDesc;
+        document.getElementById('auth-id').placeholder = d.authIdPH;
+        document.getElementById('auth-name').placeholder = d.authNamePH;
+        document.getElementById('auth-pass').placeholder = d.authPassPH;
+        document.getElementById('t-auth-btn').innerText = currentAuthMode === 'login' ? (currentLang === 'ru' ? 'Войти в систему' : 'Sign In') : (currentLang === 'ru' ? 'Зарегистрироваться' : 'Register');
+
+        document.getElementById('t-wel-title').innerText = d.welTitle;
+        document.getElementById('t-wel-text').innerHTML = d.welText;
+        document.getElementById('t-wel-btn').innerText = d.welBtn;
+
+        document.getElementById('t-hub-title').innerText = d.hubTitle;
+        document.getElementById('t-hub-desc').innerText = d.hubDesc;
+        document.getElementById('t-hub-btn1').innerText = d.hubBtn1;
+        document.getElementById('t-hub-btn2').innerText = d.hubBtn2;
+
+        document.getElementById('t-feed-title').innerText = d.feedTitle;
+        document.getElementById('t-notif-title').innerText = d.notifTitle;
+        document.getElementById('t-notif-empty').innerText = d.notifEmpty;
+
+        document.getElementById('t-bio-title').innerText = d.bioTitle;
+        document.getElementById('t-bio-edit').innerText = d.bioEdit;
+        document.getElementById('t-exit-admin-btn').innerText = d.exitAdmin;
+
+        document.getElementById('t-create-title').innerText = d.createTitle;
+        document.getElementById('t-create-back').innerText = d.createBack;
+        document.getElementById('t-create-subtitle').innerText = d.createSub;
+        document.getElementById('t-create-lbl1').innerText = d.createLbl1;
+        document.getElementById('clan-form-name').placeholder = d.createNamePH;
+        document.getElementById('clan-form-tag').placeholder = d.createTagPH;
+        document.getElementById('clan-form-desc').placeholder = d.createDescPH;
+        document.getElementById('t-create-submit').innerText = d.createBtn;
+
+        document.getElementById('t-admin-title').innerText = d.adminTitle;
+        document.getElementById('t-admin-subtitle').innerText = d.adminSub;
+        document.getElementById('t-admin-empty').innerText = d.adminEmpty;
+
+        document.getElementById('nav-lbl-feed').innerText = d.navFeed;
+        document.getElementById('nav-lbl-notif').innerText = d.navNotif;
+        document.getElementById('nav-lbl-profile').innerText = d.navProfile;
+
+        document.getElementById('t-priv-title').innerText = d.privTitle;
+        document.getElementById('t-priv-text').innerText = d.privText;
+
+        document.getElementById('t-port-mini').innerText = d.portMini;
+        document.getElementById('t-port-bio').innerText = d.portBio;
+        document.getElementById('t-port-close').innerText = d.portClose;
+
+        document.getElementById('t-edit-title').innerText = d.editTitle;
+        document.getElementById('t-edit-lbl').innerText = d.editLbl;
+        document.getElementById('t-edit-save').innerText = d.editSave;
+        document.getElementById('t-edit-cancel').innerText = d.editCancel;
+
+        document.getElementById('t-adm-login-title').innerText = d.admLoginTitle;
+        document.getElementById('t-adm-login-desc').innerText = d.admLoginDesc;
+        document.getElementById('admin-input-id').placeholder = d.admIdPH;
+        document.getElementById('admin-input-pass').placeholder = d.admPassPH;
+        document.getElementById('t-adm-login-btn').innerText = d.admLoginBtn;
+        document.getElementById('t-adm-login-cancel').innerText = d.admLoginCancel;
+
+        document.getElementById('t-status-title').innerText = d.statusTitle;
+        document.getElementById('t-status-text').innerText = d.statusText;
+        document.getElementById('t-status-btn').innerText = d.statusBtn;
+
+        document.getElementById('t-rej-title').innerText = d.rejTitle;
+        document.getElementById('t-rej-desc').innerText = d.rejDesc;
+        document.getElementById('reject-reason-input').placeholder = d.rejPH;
+        document.getElementById('t-rej-btn').innerText = d.rejBtn;
+        document.getElementById('t-rej-cancel').innerText = d.rejCancel;
+    }
+
+    function showToast(title, text) {
+        playButtonBadgeClick();
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast-item';
+        toast.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <div style="width:13px; height:13px; border-radius:4px; background:linear-gradient(135deg, var(--accent-gold), var(--border-gold)); box-shadow:0 0 10px var(--accent-gold); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <div style="width:5px; height:5px; border-radius:50%; background:#fff;"></div>
+                    </div>
+                    <span style="color:var(--accent-gold); font-size:10.5px; font-weight:700; letter-spacing:0.5px;">${title}</span>
+                </div>
+                <span style="font-size:9.5px; color:var(--text-muted); cursor:pointer; padding: 0 4px;" onclick="this.parentElement.parentElement.remove()">[✕]</span>
+            </div>
+            <p style="margin:0; font-size:10.5px; color:var(--text-main); text-align:left; padding-left:19px; line-height:1.4;">${text}</p>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 3800);
+    }
+
+    let alertCallback = null;
+    function showSiteAlert(text, cb) {
+        document.getElementById('site-alert-text').innerText = text;
+        document.getElementById('site-alert-modal').classList.remove('hidden');
+        alertCallback = cb || null;
+    }
+
+    function closeSiteAlert() {
+        document.getElementById('site-alert-modal').classList.add('hidden');
+        if (alertCallback) {
+            alertCallback();
+            alertCallback = null;
+        }
+    }
+
+    function convertFileToBase64(fileInput, callback) {
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 400;
+                    if (width > height) {
+                        if (width > maxDim) { height *= maxDim / width; width = maxDim; }
+                    } else {
+                        if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    callback(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            callback(null);
+        }
+    }
+
+    let currentUser = {
+        id: '',
+        name: '',
+        avatar: '',
+        clanId: null,
+        bio: '',
+        password: ''
+    };
+
+    let regularUserSession = null;
+    let isAdminReserveActive = false;
+    let editingClanId = null;
+    let currentRejectingClanId = null;
+    let activeChatClanId = null;
+    let chatPollInterval = null;
+    let globalSyncInterval = null;
+    let heartbeatInterval = null;
+    let isSendingChatLock = false;
+    let lastKnownChatCount = {};
+
+    let appData = {
+        clans: [],
+        pendingClans: [],
+        notifications: [],
+        joinRequests: []
+    };
+
+    const defaultSampleClans = [
+        {
+            id: 'demo_1',
+            name: 'Absolute Standoff',
+            tag: '[ABS]',
+            description: 'Профессиональный киберспортивный клан Standoff 2. Требования: от 15 лет, ранг от Легенды, праксис каждый вечер.',
+            photo: 'https://vsacaavjrsocaejksacr.supabase.co/storage/v1/object/public/musik/hd_ea54070ef7cde72b48fc8719a2703f53.jpg',
+            owner_id: 'admin_abs',
+            members: [],
+            chat: []
+        }
+    ];
+
+    async function sendHeartbeat() {
+        if (!currentUser.id || isAdminReserveActive) return;
+        try {
+            const nowIso = new Date().toISOString();
+            await sb.from('profiles').update({ last_seen: nowIso }).eq('id', currentUser.id);
+        } catch(e) {}
+    }
+
+    function startHeartbeat() {
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        sendHeartbeat();
+        heartbeatInterval = setInterval(sendHeartbeat, 8000);
+    }
+
+    async function fetchAppDataFromSupabase(isBackgroundSync = false) {
+        try {
+            const { data: clansData } = await sb.from('clans').select('*');
+            const { data: membersData } = await sb.from('profiles').select('*');
+            const { data: chatData } = await sb.from('clan_chat').select('*');
+            const { data: reqsData } = await sb.from('join_requests').select('*');
+            const { data: pendingData } = await sb.from('pending_clans').select('*');
+            const { data: notifsData } = await sb.from('notifications').select('*');
+
+            let loadedClans = (clansData || []).map(c => {
+                const fetchedChatList = (chatData || []).filter(ch => ch.clan_id === c.id);
+                const existingClan = appData.clans.find(old => old.id === c.id);
+                
+                const clanChatList = (fetchedChatList.length > 0) ? fetchedChatList : (existingClan ? existingClan.chat || [] : []);
+                
+                if (isBackgroundSync && currentUser.id && !clanMuteSettings[c.id]) {
+                    const myClanId = currentUser.clanId || currentUser.clan_id;
+                    if (myClanId === c.id) {
+                        const prevCount = lastKnownChatCount[c.id] || 0;
+                        if (clanChatList.length > prevCount && prevCount > 0) {
+                            const latestMsg = clanChatList[clanChatList.length - 1];
+                            if (latestMsg && latestMsg.sender_id !== currentUser.id) {
+                                showToast(`Чат: ${c.name}`, `${latestMsg.sender_name}: ${latestMsg.text}`);
+                            }
+                        }
+                    }
+                }
+                lastKnownChatCount[c.id] = clanChatList.length;
+
+                return {
+                    ...c,
+                    photo: c.photo && c.photo.trim() !== '' ? c.photo : 'https://via.placeholder.com/700x200/25282e/f39c12?text=SO2+CLAN',
+                    desc: c.description,
+                    members: (membersData || []).filter(m => m.clan_id === c.id),
+                    chat: clanChatList
+                };
+            });
+
+            if (loadedClans.length === 0) {
+                loadedClans = defaultSampleClans;
+            }
+
+            appData.clans = loadedClans;
+            appData.joinRequests = reqsData || [];
+            appData.pendingClans = pendingData || [];
+            appData.notifications = notifsData || [];
+            
+            if (currentUser.id) {
+                const myProf = (membersData || []).find(m => m.id === currentUser.id);
+                if (myProf) {
+                    currentUser.clanId = myProf.clan_id;
+                    currentUser.clan_id = myProf.clan_id;
+                    currentUser.name = myProf.name || currentUser.name;
+                    currentUser.avatar = myProf.avatar || currentUser.avatar;
+                    currentUser.bio = myProf.bio || currentUser.bio;
+                    currentUser.password = myProf.password || currentUser.password;
+                    saveCurrentAccountToSavedList(currentUser);
+                }
+            }
+            
+            checkUnreadStatus();
+
+            if (isBackgroundSync) {
+                if (currentActiveView === 'feed') {
+                    renderFeed();
+                } else if (currentActiveView === 'profile') {
+                    renderProfile();
+                } else if (currentActiveView === 'notifications') {
+                    renderNotifications();
+                } else if (currentActiveView === 'clan-detail' && activeChatClanId) {
+                    const clan = appData.clans.find(c => c.id === activeChatClanId);
+                    if (clan) {
+                        updateChatMessagesContainer(clan, false);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn('Supabase offline fallback:', err);
+            if (!appData.clans || appData.clans.length === 0) {
+                appData.clans = defaultSampleClans;
+            }
+        }
+    }
+
+    function startGlobalSync() {
+        if (globalSyncInterval) clearInterval(globalSyncInterval);
+        globalSyncInterval = setInterval(() => {
+            if (currentUser.id) {
+                fetchAppDataFromSupabase(true);
+            }
+        }, 2500);
+    }
+
+    async function checkUnreadStatus() {
+        const dot = document.getElementById('notif-red-dot');
+        if (!dot) return;
+
+        let hasUnread = false;
+        const myRequests = (appData.joinRequests || []).filter(r => {
+            const clan = appData.clans.find(c => c.id === r.clan_id);
+            return clan && clan.owner_id === currentUser.id && r.unread;
+        });
+        if (myRequests.length > 0) hasUnread = true;
+
+        const unreadNotifs = (appData.notifications || []).filter(n => n.user_id === currentUser.id && n.unread);
+        if (unreadNotifs.length > 0) hasUnread = true;
+
+        if (hasUnread) {
+            dot.classList.remove('hidden');
+        } else {
+            dot.classList.add('hidden');
+        }
+    }
+
+    function getSavedAccounts() {
+        try {
+            const list = JSON.parse(localStorage.getItem('so2fam_saved_accounts') || '[]');
+            return Array.isArray(list) ? list : [];
+        } catch(e) {
+            return [];
+        }
+    }
+
+    function saveCurrentAccountToSavedList(acc) {
+        if (!acc || !acc.id) return;
+        let list = getSavedAccounts();
+        const existingIdx = list.findIndex(x => x.id === acc.id);
+        if (existingIdx !== -1) {
+            list[existingIdx] = acc;
+        } else {
+            if (list.length >= 3) {
+                list.pop();
+            }
+            list.unshift(acc);
+        }
+        localStorage.setItem('so2fam_saved_accounts', JSON.stringify(list));
+    }
+
+    function renderSavedAccountsOnAuth() {
+        const container = document.getElementById('auth-saved-accounts-list');
+        const wrapper = document.getElementById('auth-accounts-switcher');
+        const list = getSavedAccounts();
+
+        if (list.length === 0) {
+            wrapper.style.display = 'none';
+            return;
+        }
+
+        wrapper.style.display = 'block';
+        container.innerHTML = list.map(acc => `
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(20,21,24,0.8); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; cursor: pointer; flex: 1;" onclick="quickLoginAccount('${acc.id}')">
+                    <img src="${acc.avatar}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                    <div style="text-align: left; overflow: hidden;">
+                        <p style="margin: 0; font-size: 10px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${acc.name}</b> (ID: ${acc.id})</p>
+                    </div>
+                </div>
+                <button class="btn btn-danger" style="width: auto; margin:0; padding: 2px 6px; font-size: 8.5px;" onclick="removeSavedAccount('${acc.id}')">[✕]</button>
+            </div>
+        `).join('');
+    }
+
+    function quickLoginAccount(id) {
+        const list = getSavedAccounts();
+        const found = list.find(x => x.id === id);
+        if (found) {
+            currentUser = found;
+            localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+            
+            showLoaderSequence('ЗАГРУЗКА ИНТЕРФЕЙСА...', 'АВТОРИЗАЦИЯ АККАУНТА...', async () => {
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                await openMainApp();
+                startGlobalSync();
+                startHeartbeat();
+                checkAndShowChangelogOnce();
+                showToast('Авторизация', currentLang === 'ru' ? `С возвращением, ${currentUser.name}!` : `Welcome back, ${currentUser.name}!`);
+            });
+        }
+    }
+
+    function removeSavedAccount(id) {
+        let list = getSavedAccounts();
+        list = list.filter(x => x.id !== id);
+        localStorage.setItem('so2fam_saved_accounts', JSON.stringify(list));
+        renderSavedAccountsOnAuth();
+        showToast('Система', currentLang === 'ru' ? 'Аккаунт удален из сохраненных' : 'Account removed from saved list');
+    }
+
+    window.onload = async function() {
+        initAndPlayAudio();
+
+        let savedAdminActive = localStorage.getItem('so2fam_admin_active');
+        if (savedAdminActive === 'true') {
+            isAdminReserveActive = true;
+            regularUserSession = JSON.parse(localStorage.getItem('so2fam_regular_user') || 'null');
+            currentUser = {
+                id: '200009009',
+                name: 'Administrator [Reserve]',
+                avatar: 'https://via.placeholder.com/150/f39c12/121316?text=ADMIN',
+                clanId: '1'
+            };
+            showLoaderSequence('ЗАГРУЗКА ИНТЕРФЕЙСА...', 'ВОССТАНОВЛЕНИЕ СЕССИИ АДМИНИСТРАТОРА...', async () => {
+                await fetchAppDataFromSupabase();
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                document.getElementById('screen-main').classList.remove('hidden');
+                switchView('admin-panel');
+                renderAdminRequests();
+                startGlobalSync();
+                showToast('Админ-панель', currentLang === 'ru' ? 'Сессия администратора восстановлена' : 'Admin session restored');
+            });
+            return;
+        }
+
+        let savedUserJson = localStorage.getItem('so2fam_current_user');
+        if (!savedUserJson) {
+            savedUserJson = sessionStorage.getItem('so2fam_current_user');
+        }
+
+        if (savedUserJson) {
+            try {
+                const parsed = JSON.parse(savedUserJson);
+                if (parsed && parsed.id) {
+                    currentUser = {
+                        id: parsed.id,
+                        name: parsed.name,
+                        avatar: parsed.avatar,
+                        bio: parsed.bio,
+                        password: parsed.password,
+                        clanId: parsed.clanId || parsed.clan_id
+                    };
+                    
+                    saveCurrentAccountToSavedList(currentUser);
+                    localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+                    sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const inviteClanId = urlParams.get('clan');
+
+                    showLoaderSequence('ЗАГРУЗКА ИНТЕРФЕЙСА...', 'ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ...', async () => {
+                        await openMainApp();
+                        startGlobalSync();
+                        startHeartbeat();
+                        checkAndShowChangelogOnce();
+                        showToast('Сессия', currentLang === 'ru' ? `Автоматический вход выполнен: ${currentUser.name}` : `Auto login successful: ${currentUser.name}`);
+
+                        if (inviteClanId) {
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                            openClanDetail(inviteClanId);
+                        }
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        showLoaderSequence('ЗАГРУЗКА ИНТЕРФЕЙСА...', 'ГОТОВО К ЗАПУСКУ...', () => {
+            document.getElementById('screen-lang').classList.remove('hidden');
+        });
+    };
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        currentUser.bio = currentLang === 'ru' ? 'Привет! Я играю в Standoff 2 и ищу сильный клан.' : 'Hi! I play Standoff 2 and look for a strong clan.';
+        updateLanguageUI();
+        document.getElementById('screen-lang').classList.add('hidden');
+        document.getElementById('screen-auth').classList.remove('hidden');
+        renderSavedAccountsOnAuth();
+        showToast('Язык', currentLang === 'ru' ? 'Выбран русский язык' : 'English language selected');
+    }
+
+    async function loginUser() {
+        const idInput = document.getElementById('auth-id').value.trim();
+        const nameInput = document.getElementById('auth-name').value.trim();
+        const passInput = document.getElementById('auth-pass').value.trim();
+
+        if (!idInput || !nameInput || !passInput) {
+            showSiteAlert(currentLang === 'ru' ? 'Пожалуйста, заполните все поля для входа.' : 'Please fill in all fields to sign in.');
+            return;
+        }
+
+        showSimpleLoader(currentLang === 'ru' ? 'ПРОВЕРКА АККАУНТА...' : 'CHECKING ACCOUNT...');
+
+        try {
+            let existingProfile = null;
+            try {
+                let res = await sb.from('profiles').select('*').eq('id', idInput).maybeSingle();
+                existingProfile = res.data;
+            } catch(e) {}
+
+            if (!existingProfile) {
+                hideLoader();
+                showSiteAlert(currentLang === 'ru' ? 'Аккаунт с таким ID не найден в базе данных! Пожалуйста, зарегистрируйтесь.' : 'Account with this ID not found! Please register.');
+                return;
+            }
+
+            if (existingProfile.password && existingProfile.password !== passInput) {
+                hideLoader();
+                showSiteAlert(currentLang === 'ru' ? 'Неверный пароль аккаунта!' : 'Incorrect account password!');
+                return;
+            }
+
+            showLoaderSequence('ЗАГРУЗКА ИНТЕРФЕЙСА...', 'ВХОД В СИСТЕМУ...', async () => {
+                currentUser = {
+                    id: existingProfile.id,
+                    name: existingProfile.name || nameInput,
+                    password: passInput,
+                    avatar: existingProfile.avatar || defaultAvatarsPool[0],
+                    bio: existingProfile.bio || (currentLang === 'ru' ? 'Привет! Я играю в Standoff 2 и ищу сильный клан.' : 'Hi! I play Standoff 2 and look for a strong clan.'),
+                    clanId: existingProfile.clan_id || null,
+                    clan_id: existingProfile.clan_id || null
+                };
+
+                saveCurrentAccountToSavedList(currentUser);
+                localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+                sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+
+                document.getElementById('screen-auth').classList.add('hidden');
+                await openMainApp();
+                startGlobalSync();
+                startHeartbeat();
+                checkAndShowChangelogOnce();
+                showToast('Успех', currentLang === 'ru' ? `Добро пожаловать, ${currentUser.name}!` : `Welcome, ${currentUser.name}!`);
+            });
+        } catch (err) {
+            hideLoader();
+            showSiteAlert('Error: ' + err.message);
+        }
+    }
+
+    async function registerUser() {
+        const idInput = document.getElementById('auth-id').value.trim();
+        const nameInput = document.getElementById('auth-name').value.trim();
+        const passInput = document.getElementById('auth-pass').value.trim();
+
+        const isNumeric = /^\d+$/.test(idInput);
+        if (!isNumeric || idInput.length < 9) {
+            showSiteAlert(currentLang === 'ru' ? 'Игровой ID должен состоять только из цифр и содержать не менее 9 символов!' : 'Game ID must contain only digits and be at least 9 characters long!');
+            return;
+        }
+
+        if (!nameInput) {
+            showSiteAlert(currentLang === 'ru' ? 'Пожалуйста, введите имя пользователя.' : 'Please enter your username.');
+            return;
+        }
+
+        if (!passInput || passInput.length < 4) {
+            showSiteAlert(currentLang === 'ru' ? 'Придумайте надежный пароль (минимум 4 символа).' : 'Please enter a password (min 4 chars).');
+            return;
+        }
+
+        if (containsProfanity(nameInput)) {
+            showSiteAlert(currentLang === 'ru' ? 'Имя пользователя содержит запрещенные слова!' : 'Username contains forbidden words!');
+            return;
+        }
+
+        showSimpleLoader(currentLang === 'ru' ? 'ПРОВЕРКА И СОХРАНЕНИЕ...' : 'CHECKING & SAVING...');
+
+        try {
+            let existingProfile = null;
+            try {
+                let res = await sb.from('profiles').select('*').eq('id', idInput).maybeSingle();
+                existingProfile = res.data;
+            } catch(e) {}
+
+            if (existingProfile) {
+                if (existingProfile.password && existingProfile.password !== passInput) {
+                    hideLoader();
+                    showSiteAlert(currentLang === 'ru' ? 'Такий ID уже существует и пароль неверный! Выберите другой ID или введите правильный пароль.' : 'This ID already exists and password is incorrect!');
+                    return;
+                }
+            }
+
+            const randomDefaultAvatar = defaultAvatarsPool[Math.floor(Math.random() * defaultAvatarsPool.length)];
+
+            showLoaderSequence('ЗАГРУЗКА ИНТЕРФЕЙСА...', 'СОХРАНЕНИЕ ДАННЫХ ПРОФИЛЯ...', async () => {
+                const newProf = {
+                    id: idInput,
+                    name: nameInput,
+                    password: passInput,
+                    avatar: existingProfile ? existingProfile.avatar : randomDefaultAvatar,
+                    bio: existingProfile ? existingProfile.bio : (currentLang === 'ru' ? 'Привет! Я играю в Standoff 2 и ищу сильный клан.' : 'Hi! I play Standoff 2 and look for a strong clan.'),
+                    clan_id: existingProfile ? existingProfile.clan_id : null,
+                    last_seen: new Date().toISOString()
+                };
+                try {
+                    await sb.from('profiles').upsert([newProf]);
+                } catch(e) {}
+                currentUser = newProf;
+
+                saveCurrentAccountToSavedList(currentUser);
+                localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+                sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+
+                document.getElementById('screen-auth').classList.add('hidden');
+                document.getElementById('screen-welcome-info').classList.remove('hidden');
+                startHeartbeat();
+                checkAndShowChangelogOnce();
+                showToast('Успех', currentLang === 'ru' ? 'Аккаунт успешно создан и защищен!' : 'Account successfully created and secured!');
+            });
+        } catch (err) {
+            hideLoader();
+            showSiteAlert('Error: ' + err.message);
+        }
+    }
+
+    function logoutAccount() {
+        if (!confirm(currentLang === 'ru' ? 'Вы действительно хотите выйти из аккаунта?' : 'Do you really want to log out?')) return;
+        
+        showLoaderSequence('ЗАГРУЗКА ИНТЕРФЕЙСА...', 'ВЫХОД И ОЧИСТКА СЕССИИ...', () => {
+            saveCurrentAccountToSavedList(currentUser);
+            localStorage.removeItem('so2fam_current_user');
+            sessionStorage.removeItem('so2fam_current_user');
+            localStorage.removeItem('so2fam_admin_active');
+            localStorage.removeItem('so2fam_regular_user');
+            
+            currentUser = { id: '', name: '', avatar: '', clanId: null, bio: '', password: '' };
+            stopChatPolling();
+            if (globalSyncInterval) clearInterval(globalSyncInterval);
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('screen-auth').classList.remove('hidden');
+            document.getElementById('auth-id').value = '';
+            document.getElementById('auth-name').value = '';
+            document.getElementById('auth-pass').value = '';
+            renderSavedAccountsOnAuth();
+            showToast('Выход', currentLang === 'ru' ? 'Вы успешно вышли из аккаунта' : 'Successfully logged out');
+        });
+    }
+
+    function goToHubChoice() {
+        document.getElementById('screen-welcome-info').classList.add('hidden');
+        document.getElementById('screen-hub-choice').classList.remove('hidden');
+        document.getElementById('privacy-push').classList.remove('hidden');
+        playButtonBadgeClick();
+    }
+
+    function closePrivacyPush() {
+        document.getElementById('privacy-push').classList.add('hidden');
+        showToast('Конфиденциальность', currentLang === 'ru' ? 'Правила приняты' : 'Privacy terms accepted');
+    }
+
+    async function openMainApp() {
+        await fetchAppDataFromSupabase();
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById('screen-main').classList.remove('hidden');
+        switchView('feed', document.querySelector('.nav-item'), 0);
+        renderFeed();
+        renderProfile();
+        renderNotifications();
+        startGlobalSync();
+        startHeartbeat();
+    }
+
+    function showCreateClanScreen() {
+        stopChatPolling();
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById('screen-main').classList.remove('hidden');
+        switchView('create-clan');
+    }
+
+    function switchView(viewName, navElement, index) {
+        currentActiveView = viewName;
+        if (viewName !== 'clan-detail') {
+            stopChatPolling();
+        }
+
+        document.querySelectorAll('.view').forEach(v => {
+            v.classList.remove('active');
+            v.style.display = 'none';
+        });
+
+        const target = document.getElementById('view-' + viewName);
+        if (target) {
+            target.style.display = 'block';
+            target.classList.add('active');
+        }
+
+        if (navElement) {
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            navElement.classList.add('active');
+        }
+
+        if (index !== undefined) {
+            const indicator = document.getElementById('nav-indicator');
+            if (indicator) indicator.style.left = (index * 33.333) + '%';
+        }
+
+        if (viewName === 'feed') renderFeed();
+        if (viewName === 'profile') renderProfile();
+        if (viewName === 'notifications') {
+            markNotificationsAsRead();
+            renderNotifications();
+        }
+    }
+
+    async function markNotificationsAsRead() {
+        try {
+            await sb.from('join_requests').update({ unread: false }).eq('owner_id', currentUser.id);
+            await sb.from('notifications').update({ unread: false }).eq('user_id', currentUser.id).eq('unread', true);
+            appData.joinRequests.forEach(r => { if (r.owner_id === currentUser.id) r.unread = false; });
+            appData.notifications.forEach(n => { if (n.user_id === currentUser.id) n.unread = false; });
+            checkUnreadStatus();
+        } catch(e) {}
+    }
+
+    async function inlineEditName() {
+        const newName = prompt(currentLang === 'ru' ? 'Введите новое имя пользователя:' : 'Enter new username:', currentUser.name);
+        if (newName && newName.trim()) {
+            const trimmed = newName.trim();
+            if (containsProfanity(trimmed)) {
+                showSiteAlert(currentLang === 'ru' ? 'Имя содержит запрещенные слова!' : 'Username contains forbidden words!');
+                return;
+            }
+            currentUser.name = trimmed;
+            try {
+                await sb.from('profiles').update({ name: trimmed }).eq('id', currentUser.id);
+                await sb.from('clan_chat').update({ sender_name: trimmed }).eq('sender_id', currentUser.id);
+            } catch(e) {}
+            saveCurrentAccountToSavedList(currentUser);
+            localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+            renderProfile();
+            showToast(dict[currentLang].toastProfileUpd, currentLang === 'ru' ? 'Имя успешно изменено на: ' + trimmed : 'Username changed successfully to: ' + trimmed);
+        }
+    }
+
+    async function editUserBio() {
+        const newBio = prompt(currentLang === 'ru' ? 'Введите описание (портфолио) вашего профиля:' : 'Enter your profile bio/portfolio:', currentUser.bio || '');
+        if (newBio !== null) {
+            const trimmed = newBio.trim();
+            if (containsProfanity(trimmed)) {
+                showSiteAlert(currentLang === 'ru' ? 'Описание содержит запрещенные слова!' : 'Bio contains forbidden words!');
+                return;
+            }
+            currentUser.bio = trimmed;
+            try {
+                await sb.from('profiles').update({ bio: trimmed }).eq('id', currentUser.id);
+            } catch(e) {}
+            saveCurrentAccountToSavedList(currentUser);
+            localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+            renderProfile();
+            showToast(dict[currentLang].toastProfileUpd, dict[currentLang].toastBioSaved);
+        }
+    }
+
+    function triggerAvatarUpload() {
+        document.getElementById('hidden-avatar-input').click();
+    }
+
+    async function handleAvatarFileSelect(input) {
+        showSimpleLoader(currentLang === 'ru' ? 'ОБРАБОТКА ФОТО...' : 'PROCESSING PHOTO...');
+        convertFileToBase64(input, async function(base64Image) {
+            if (base64Image) {
+                currentUser.avatar = base64Image;
+                try {
+                    await sb.from('profiles').update({ avatar: base64Image }).eq('id', currentUser.id);
+                    await sb.from('clan_chat').update({ sender_avatar: base64Image }).eq('sender_id', currentUser.id);
+                } catch(e) {}
+                saveCurrentAccountToSavedList(currentUser);
+                localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+                sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+                hideLoader();
+                renderProfile();
+                showToast(dict[currentLang].toastProfileUpd, dict[currentLang].toastProfileSaved);
+            } else {
+                hideLoader();
+            }
+        });
+    }
+
+    function openMyPortfolio() {
+        openUserProfileModal(currentUser.id, currentUser.name, currentUser.avatar, currentUser.bio, true);
+    }
+
+    function isUserOnline(lastSeenStr) {
+        if (!lastSeenStr) return false;
+        const lastSeenTime = new Date(lastSeenStr).getTime();
+        const nowTime = new Date().getTime();
+        return (nowTime - lastSeenTime) < 15000;
+    }
+
+    function openUserProfileModal(userId, name, avatar, bio, isMe = false, lastSeen = null) {
+        document.getElementById('portfolio-avatar').src = avatar || 'https://via.placeholder.com/150/25282e/f39c12?text=SO2';
+        document.getElementById('portfolio-name').innerText = name || 'Игрок';
+        document.getElementById('portfolio-id').innerText = 'ID: ' + (userId || '---');
+        document.getElementById('portfolio-bio').innerText = bio || (currentLang === 'ru' ? 'Описание отсутствует.' : 'No description.');
+
+        const statusEl = document.getElementById('portfolio-status');
+        const online = isMe || isUserOnline(lastSeen);
+        
+        if (online) {
+            statusEl.innerHTML = `<span style="display:inline-flex; align-items:center; justify-content:center; gap:6px; color:var(--success);"><span class="status-indicator online" style="margin:0;"></span> ${currentLang === 'ru' ? 'В сети (Online)' : 'Online'}</span>`;
+        } else {
+            statusEl.innerHTML = `<span style="display:inline-flex; align-items:center; justify-content:center; gap:6px; color:#e74c3c;"><span class="status-indicator offline" style="margin:0;"></span> ${currentLang === 'ru' ? 'Не в сети (Offline)' : 'Offline'}</span>`;
+        }
+
+        let userClanObj = null;
+        let isClanOwner = false;
+        for (let clan of appData.clans) {
+            if (clan.owner_id === userId || clan.owner_id === name) {
+                userClanObj = clan;
+                isClanOwner = true;
+                break;
+            }
+            if (clan.members && clan.members.find(m => m.id === userId || m.name === name)) {
+                userClanObj = clan;
+                isClanOwner = false;
+                break;
+            }
+        }
+
+        const d = dict[currentLang];
+        const clanBadge = document.getElementById('portfolio-clan-badge');
+        const clanText = document.getElementById('portfolio-clan-text');
+        if (userClanObj) {
+            const roleText = isClanOwner ? d.roleOwner : d.roleMember;
+            clanText.innerText = `${userClanObj.name} ${userClanObj.tag} — [${roleText}]`;
+            clanBadge.style.display = 'block';
+        } else {
+            clanBadge.style.display = 'none';
+        }
+
+        document.getElementById('user-portfolio-modal').classList.remove('hidden');
+    }
+
+    function closePortfolioModal() {
+        document.getElementById('user-portfolio-modal').classList.add('hidden');
+    }
+
+    function viewUserPortfolio(userId, userName) {
+        if (userId === currentUser.id || userName === currentUser.name) {
+            openMyPortfolio();
+            return;
+        }
+
+        let foundAvatar = 'https://via.placeholder.com/150/25282e/f39c12?text=SO2';
+        let foundBio = currentLang === 'ru' ? 'Описание отсутствует.' : 'No description.';
+        let foundId = userId || '---';
+        let foundLastSeen = null;
+
+        for (let clan of appData.clans) {
+            if (clan.members) {
+                const m = clan.members.find(x => x.id === userId || x.name === userName);
+                if (m) {
+                    if (m.avatar) foundAvatar = m.avatar;
+                    if (m.bio) foundBio = m.bio;
+                    if (m.id) foundId = m.id;
+                    if (m.last_seen) foundLastSeen = m.last_seen;
+                    break;
+                }
+            }
+            if (clan.chat) {
+                const msg = clan.chat.find(x => x.sender_id === userId || x.sender_name === userName);
+                if (msg) {
+                    if (msg.sender_avatar) foundAvatar = msg.sender_avatar;
+                    if (msg.sender_bio) foundBio = msg.sender_bio;
+                    if (msg.sender_id) foundId = msg.sender_id;
+                    break;
+                }
+            }
+        }
+
+        openUserProfileModal(foundId, userName || 'Player', foundAvatar, foundBio, false, foundLastSeen);
+    }
+
+    function renderFeed() {
+        const container = document.getElementById('clans-feed-list');
+        if (!appData.clans || appData.clans.length === 0) {
+            container.innerHTML = `<p>${currentLang === 'ru' ? 'Пока нет добавленных кланов.' : 'No clans added yet.'}</p>`;
+            return;
+        }
+
+        container.innerHTML = appData.clans.map(clan => `
+            <div class="clan-card" onclick="openClanDetail('${clan.id}')">
+                <img src="${clan.photo}" class="clan-avatar" alt="clan">
+                <div class="clan-info">
+                    <h4>${clan.name}</h4>
+                    <span>${clan.tag}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function copyInviteLink(clanId) {
+        const inviteUrl = `${window.location.origin}${window.location.pathname}?clan=${clanId}`;
+        prompt(currentLang === 'ru' ? 'Скопируйте ссылку для приглашения в клан (выделите и скопируйте):' : 'Copy clan invite link:', inviteUrl);
+        showToast('Ссылка', currentLang === 'ru' ? 'Прямая ссылка на клан скопирована!' : 'Clan invite link copied!');
+    }
+
+    function startChatPolling(clanId) {
+        stopChatPolling();
+        activeChatClanId = clanId;
+        chatPollInterval = setInterval(async () => {
+            if (!activeChatClanId) return;
+            try {
+                const { data: chatData } = await sb.from('clan_chat').select('*').eq('clan_id', activeChatClanId);
+                const clan = appData.clans.find(c => c.id === activeChatClanId);
+                if (clan && chatData && chatData.length > 0) {
+                    clan.chat = chatData;
+                    updateChatMessagesContainer(clan, false);
+                }
+            } catch (e) {}
+        }, 2000);
+    }
+
+    function stopChatPolling() {
+        if (chatPollInterval) {
+            clearInterval(chatPollInterval);
+            chatPollInterval = null;
+        }
+        activeChatClanId = null;
+    }
+
+    let lastRenderedChatLength = {};
+    let lastRenderedMsgId = {};
+
+    function updateChatMessagesContainer(clan, forceScroll = false) {
+        const chatBox = document.getElementById('clan-chat-messages');
+        if (!chatBox) return;
+
+        const chatList = clan.chat || [];
+        const lastMsgId = chatList.length > 0 ? chatList[chatList.length - 1].id : null;
+        
+        if (!forceScroll && chatList.length === lastRenderedChatLength[clan.id] && lastMsgId === lastRenderedMsgId[clan.id]) {
+            return;
+        }
+
+        lastRenderedChatLength[clan.id] = chatList.length;
+        lastRenderedMsgId[clan.id] = lastMsgId;
+
+        const d = dict[currentLang];
+        let chatHtml = chatList.length > 0 ? chatList.map(msg => {
+            const memberObj = clan.members.find(m => m.id === msg.sender_id);
+            const msgAvatar = memberObj ? memberObj.avatar : (msg.sender_avatar || 'https://via.placeholder.com/50');
+            const msgName = memberObj ? memberObj.name : (msg.sender_name || 'Player');
+            
+            let timeStr = '';
+            if (msg.created_at) {
+                const dateObj = new Date(msg.created_at);
+                timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + dateObj.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+            }
+
+            return `
+                <div class="tg-msg">
+                    <img src="${msgAvatar}" onclick="viewUserPortfolio('${msg.sender_id || ''}', '${msgName}')">
+                    <div class="tg-msg-bubble">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            <div class="tg-msg-author" onclick="viewUserPortfolio('${msg.sender_id || ''}', '${msgName}')">${msgName}</div>
+                            <span style="font-size:8.5px; color:var(--text-muted);">${timeStr}</span>
+                        </div>
+                        <div>${msg.text}</div>
+                    </div>
+                </div>
+            `;
+        }).join('') : `<p style="color:var(--text-muted); font-size:11px; text-align:center; margin-top:80px;">${d.noChat}</p>`;
+
+        const wasAtBottom = (chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight) < 60;
+        chatBox.innerHTML = chatHtml;
+        if (forceScroll || wasAtBottom || chatList.length === 1) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    }
+
+    async function kickMember(memberId, clanId) {
+        if (!confirm(currentLang === 'ru' ? 'Вы действительно хотите исключить этого участника из клана?' : 'Do you really want to kick this member from the clan?')) return;
+        showSimpleLoader(currentLang === 'ru' ? 'ИСКЛЮЧЕНИЕ...' : 'KICKING...');
+        try {
+            await sb.from('profiles').update({ clan_id: null }).eq('id', memberId);
+            await fetchAppDataFromSupabase();
+            hideLoader();
+            openClanDetail(clanId);
+            showToast(currentLang === 'ru' ? 'Клан' : 'Clan', currentLang === 'ru' ? 'Участник успешно исключен из клана.' : 'Member successfully kicked from clan.');
+        } catch(e) {
+            hideLoader();
+            showSiteAlert('Error: ' + e.message);
+        }
+    }
+
+    function openClanDetail(clanId) {
+        currentActiveView = 'clan-detail';
+        activeChatClanId = clanId;
+        const clan = appData.clans.find(c => c.id === clanId);
+        if (!clan) return;
+
+        updateClanDetailDOM(clan);
+        switchView('clan-detail');
+        if (clan.owner_id === currentUser.id || (currentUser.clanId === clanId || currentUser.clan_id === clanId)) {
+            updateChatMessagesContainer(clan, true);
+            startChatPolling(clan.id);
+        }
+    }
+
+    function updateClanDetailDOM(clan) {
+        if (currentActiveView !== 'clan-detail' || activeChatClanId !== clan.id) return;
+        const d = dict[currentLang];
+        const isOwner = clan.owner_id === currentUser.id;
+        const isMember = currentUser.clanId === clan.id || currentUser.clan_id === clan.id;
+        const isMuted = clanMuteSettings[clan.id] || false;
+
+        let membersHtml = clan.members && clan.members.length > 0 ? clan.members.map(m => {
+            const canKick = isOwner && m.id !== clan.owner_id && m.id !== currentUser.id;
+            const online = isUserOnline(m.last_seen);
+            const statusClass = online ? 'status-indicator online' : 'status-indicator offline';
+            const statusTitle = online ? (currentLang === 'ru' ? 'В сети' : 'Online') : (currentLang === 'ru' ? 'Не в сети' : 'Offline');
+
+            return `
+                <div class="member-chip" onclick="viewUserPortfolio('${m.id || ''}', '${m.name || 'Player'}')">
+                    <img src="${m.avatar || 'https://via.placeholder.com/50'}"> ${m.name || 'Player'}
+                    <span class="${statusClass}" title="${statusTitle}"></span>
+                    ${canKick ? `<span style="color:var(--danger); margin-left:4px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation(); kickMember('${m.id}', '${clan.id}')" title="Исключить участника">[✕]</span>` : ''}
+                </div>
+            `;
+        }).join('') : `<p style="font-size:11px; color:var(--text-muted);">${d.noMembers}</p>`;
+
+        let chatSection = '';
+        if (isOwner || isMember) {
+            chatSection = `
+                <h3 style="font-size: 11.5px; text-align: left; margin-top: 16px; color: var(--accent-gold); letter-spacing: 0.5px;">[ОБЩИЙ ЧАТ КЛАНА]</h3>
+                <div class="tg-chat-box" id="clan-chat-messages"></div>
+                <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+                    <input type="text" id="clan-chat-input" placeholder="${d.chatPlaceholder}" style="margin:0;" onkeypress="handleChatKeyPress(event, '${clan.id}')">
+                    <button class="btn btn-gold" id="clan-send-btn" style="width: auto; margin:0; padding: 0 16px;" onclick="sendClanMessage('${clan.id}')">${d.chatSend}</button>
+                </div>
+            `;
+        } else {
+            chatSection = `
+                <div style="background: rgba(20, 21, 24, 0.95); border: 1px solid var(--border-color); padding: 16px; border-radius: 10px; text-align: center; margin: 16px 0;">
+                    <p style="margin:0; font-size: 11.5px; color: var(--accent-gold); line-height: 1.5;">${d.lockChat}</p>
+                </div>
+            `;
+        }
+
+        let ownerButtons = '';
+        if (isOwner) {
+            ownerButtons = `
+                <button class="btn btn-gold" onclick="openEditClanModal('${clan.id}')">[✎] Редактировать клан</button>
+                <button class="btn btn-danger" onclick="confirmDeleteClan('${clan.id}')">[✕] Удалить клан</button>
+            `;
+        }
+
+        let actionButton = '';
+        if (isOwner) {
+            actionButton = ownerButtons;
+        } else if (isMember) {
+            actionButton = `<button class="btn btn-danger" onclick="leaveClan()">${d.btnLeave}</button>`;
+        } else {
+            actionButton = `<button class="btn btn-gold" onclick="sendJoinRequest('${clan.id}')">${d.btnJoin}</button>`;
+        }
+
+        const muteButtonIcon = isMuted ? 
+            `<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:var(--danger);"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>` : 
+            `<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:var(--accent-gold);"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>`;
+
+        const clanHeaderTools = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h2 style="margin: 0; text-align: left; color: var(--text-main); font-size: 20px;">${clan.name}</h2>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn" style="width: auto; margin:0; padding: 6px 10px; font-size: 10px; background: #25282e;" onclick="toggleClanMute('${clan.id}')" title="Выключить/включить уведомления в клане">
+                        ${muteButtonIcon}
+                    </button>
+                    <button class="btn" style="width: auto; margin:0; padding: 6px 12px; font-size: 10px; background: #25282e;" onclick="switchView('feed', document.querySelectorAll('.nav-item')[0], 0)">[←] Назад</button>
+                </div>
+            </div>
+        `;
+
+        const inviteSection = `
+            <div style="margin-top: 14px; background: rgba(20,21,24,0.7); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; text-align: center;">
+                <p style="font-size: 10px; color: var(--accent-gold); margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px;">[ССЫЛКА ДЛЯ ПРИГЛАШЕНИЯ]</p>
+                <button class="copy-invite-css-btn" onclick="copyInviteLink('${clan.id}')">
+                    <svg class="copy-icon-svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    Скопировать прямую ссылку
+                </button>
+            </div>
+        `;
+
+        const detailContainer = document.getElementById('clan-detail-content');
+        detailContainer.innerHTML = `
+            <div class="clan-detail-page">
+                <img src="${clan.photo}" class="clan-detail-banner" alt="Clan Banner">
+                <div class="clan-detail-body">
+                    ${clanHeaderTools}
+                    <div class="badge-tag">${clan.tag}</div>
+                    <p style="margin: 10px 0; text-align: left; font-size: 12px; color: var(--text-muted); line-height: 1.5;">${clan.description || clan.desc || (currentLang === 'ru' ? 'Описание отсутствует.' : 'No description.')}</p>
+                    
+                    <h3 style="font-size: 11.5px; text-align: left; margin-top: 18px; color: var(--accent-gold); letter-spacing: 0.5px;">[УЧАСТНИКИ] (${clan.members ? clan.members.length : 0}):</h3>
+                    <div class="members-list">
+                        ${membersHtml}
+                    </div>
+
+                    ${chatSection}
+                    
+                    <div class="action-buttons-group">
+                        ${actionButton}
+                    </div>
+
+                    ${inviteSection}
+                </div>
+            </div>
+        `;
+        if (isOwner || isMember) {
+            updateChatMessagesContainer(clan, false);
+        }
+    }
+
+    function handleChatKeyPress(e, clanId) {
+        if (e.key === 'Enter') {
+            sendClanMessage(clanId);
+        }
+    }
+
+    async function sendClanMessage(clanId) {
+        if (isSendingChatLock) return;
+
+        const input = document.getElementById('clan-chat-input');
+        if (!input) return;
+        const text = input.value.trim();
+        if (!text) return;
+
+        if (containsProfanity(text)) {
+            showSiteAlert(currentLang === 'ru' ? 'Сообщение содержит запрещенные слова!' : 'Message contains forbidden words!');
+            return;
+        }
+
+        isSendingChatLock = true;
+        const sendBtn = document.getElementById('clan-send-btn');
+        if (sendBtn) sendBtn.disabled = true;
+
+        input.value = '';
+
+        const newMsg = {
+            clan_id: clanId,
+            sender_id: currentUser.id,
+            sender_name: currentUser.name,
+            sender_avatar: currentUser.avatar || 'https://via.placeholder.com/150/25282e/f39c12?text=SO2',
+            sender_bio: currentUser.bio || '',
+            text: text
+        };
+
+        try {
+            await sb.from('clan_chat').insert([newMsg]);
+            const { data: chatData } = await sb.from('clan_chat').select('*').eq('clan_id', clanId);
+            const clan = appData.clans.find(c => c.id === clanId);
+            if (clan && chatData) {
+                clan.chat = chatData;
+                updateChatMessagesContainer(clan, true);
+            }
+        } catch(e) {}
+
+        setTimeout(() => {
+            isSendingChatLock = false;
+            if (sendBtn) sendBtn.disabled = false;
+        }, 600);
+    }
+
+    function openEditClanModal(clanId) {
+        const clan = appData.clans.find(c => c.id === clanId);
+        if (!clan) return;
+
+        editingClanId = clanId;
+        document.getElementById('edit-clan-readonly-info').innerText = currentLang === 'ru' ? `Клан: ${clan.name} ${clan.tag} (Имя и тег менять нельзя)` : `Clan: ${clan.name} ${clan.tag} (Name and tag cannot be changed)`;
+        document.getElementById('edit-clan-desc').value = clan.description || clan.desc || '';
+        document.getElementById('edit-clan-photo-file').value = '';
+        document.getElementById('edit-clan-modal').classList.remove('hidden');
+    }
+
+    function closeEditClanModal() {
+        editingClanId = null;
+        document.getElementById('edit-clan-modal').classList.add('hidden');
+    }
+
+    async function saveClanEdits() {
+        const clan = appData.clans.find(c => c.id === editingClanId);
+        if (!clan) return;
+
+        const desc = document.getElementById('edit-clan-desc').value.trim();
+        if (containsProfanity(desc)) {
+            showSiteAlert(currentLang === 'ru' ? 'Описание клана содержит запрещенные слова!' : 'Clan description contains forbidden words!');
+            return;
+        }
+
+        const fileInput = document.getElementById('edit-clan-photo-file');
+
+        showSimpleLoader(currentLang === 'ru' ? 'СОХРАНЕНИЕ...' : 'SAVING...');
+        convertFileToBase64(fileInput, async function(base64Photo) {
+            let updatePayload = { description: desc };
+            if (base64Photo) updatePayload.photo = base64Photo;
+
+            try {
+                await sb.from('clans').update(updatePayload).eq('id', editingClanId);
+            } catch(e) {}
+            hideLoader();
+            closeEditClanModal();
+            await fetchAppDataFromSupabase();
+            openClanDetail(editingClanId);
+            showToast(dict[currentLang].toastClanUpd, dict[currentLang].toastClanSaved);
+        });
+    }
+
+    async function sendJoinRequest(clanId) {
+        const clan = appData.clans.find(c => c.id === clanId);
+        if (!clan) return;
+
+        if (currentUser.clanId || currentUser.clan_id) {
+            showSiteAlert(currentLang === 'ru' ? 'Вы уже состоите в другом клане!' : 'You are already in another clan!');
+            return;
+        }
+
+        const alreadyExists = (appData.joinRequests || []).some(r => r.clan_id === clanId && r.user_id === currentUser.id);
+        if (alreadyExists) {
+            showSiteAlert(currentLang === 'ru' ? 'Вы уже подали заявку в этот клан. Ожидайте ответа создателя.' : 'You have already applied to this clan. Please wait for the creator response.');
+            return;
+        }
+
+        const requestObj = {
+            id: 'req_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+            clan_id: clanId,
+            clan_name: clan.name,
+            owner_id: clan.owner_id,
+            user_id: currentUser.id,
+            user_name: currentUser.name,
+            user_avatar: currentUser.avatar,
+            user_bio: currentUser.bio,
+            unread: true
+        };
+
+        try {
+            await sb.from('join_requests').insert([requestObj]);
+        } catch(e) {}
+        await fetchAppDataFromSupabase();
+
+        showToast(dict[currentLang].toastReq, dict[currentLang].toastReqSent);
+        renderNotifications();
+        renderProfile();
+    }
+
+    async function cancelMyJoinRequest(reqId) {
+        showSimpleLoader(currentLang === 'ru' ? 'ОТМЕНА ЗАЯВКИ...' : 'CANCELLING REQUEST...');
+        try {
+            await sb.from('join_requests').delete().eq('id', reqId);
+        } catch(e) {}
+        await fetchAppDataFromSupabase();
+        hideLoader();
+        renderProfile();
+        showToast(currentLang === 'ru' ? 'Заявка' : 'Request', currentLang === 'ru' ? 'Вы успешно отменили заявку на вступление.' : 'You successfully cancelled your join request.');
+    }
+
+    async function cancelMyPendingClan(reqId) {
+        showSimpleLoader(currentLang === 'ru' ? 'ОТМЕНА МОДЕРАЦИИ...' : 'CANCELLING MODERATION...');
+        try {
+            await sb.from('pending_clans').delete().eq('id', reqId);
+        } catch(e) {}
+        await fetchAppDataFromSupabase();
+        hideLoader();
+        renderProfile();
+        showToast(currentLang === 'ru' ? 'Модерация' : 'Moderation', currentLang === 'ru' ? 'Заявка на создание клана отменена.' : 'Clan creation request cancelled.');
+    }
+
+    async function confirmDeleteClan(clanId) {
+        if (!confirm(currentLang === 'ru' ? 'Вы действительно хотите удалить свой клан? Это действие необратимо.' : 'Do you really want to delete your clan? This is irreversible.')) return;
+        if (!confirm(currentLang === 'ru' ? 'ТОЧНО УДОСТОВЕРЬТЕСЬ: Вы хотите полностью удалить клан со всеми участниками?' : 'CONFIRM: Do you want to completely delete the clan with all members?')) return;
+
+        showSimpleLoader(currentLang === 'ru' ? 'УДАЛЕНИЕ КЛАНА...' : 'DELETING CLAN...');
+        try {
+            await sb.from('clans').delete().eq('id', clanId);
+            await sb.from('profiles').update({ clan_id: null }).eq('clan_id', clanId);
+        } catch(e) {}
+        
+        if (currentUser.clanId === clanId || currentUser.clan_id === clanId) {
+            currentUser.clanId = null;
+            currentUser.clan_id = null;
+            saveCurrentAccountToSavedList(currentUser);
+            localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+        }
+
+        hideLoader();
+        await fetchAppDataFromSupabase();
+        showSiteAlert(currentLang === 'ru' ? 'Клан успешно удален.' : 'Clan successfully deleted.', () => {
+            openMainApp();
+        });
+        showToast('Клан', currentLang === 'ru' ? 'Клан был полностью удален' : 'Clan was completely deleted');
+    }
+
+    async function acceptJoinRequest(reqId) {
+        const req = appData.joinRequests.find(r => r.id === reqId);
+        if (!req) return;
+
+        try {
+            await sb.from('profiles').update({ clan_id: req.clan_id }).eq('id', req.user_id);
+            await sb.from('join_requests').delete().eq('id', reqId);
+
+            const notif = {
+                id: Date.now() + '_' + Math.floor(Math.random()*1000),
+                user_id: req.user_id,
+                text: currentLang === 'ru' ? `Поздравляем! Ваша заявка на вступление в клан ${req.clan_name} была принята.` : `Congratulations! Your request to join ${req.clan_name} was accepted.`,
+                unread: true
+            };
+            await sb.from('notifications').insert([notif]);
+        } catch(e) {}
+
+        await fetchAppDataFromSupabase();
+        renderNotifications();
+        showToast(dict[currentLang].toastReq, dict[currentLang].toastJoinAcc);
+    }
+
+    async function rejectJoinRequest(reqId) {
+        const req = appData.joinRequests.find(r => r.id === reqId);
+        try {
+            if (req) {
+                const notif = {
+                    id: Date.now() + '_' + Math.floor(Math.random()*1000),
+                    user_id: req.user_id,
+                    text: currentLang === 'ru' ? `Ваша заявка на вступление в клан ${req.clan_name} была отклонена.` : `Your request to join ${req.clan_name} was rejected.`,
+                    unread: true
+                };
+                await sb.from('notifications').insert([notif]);
+            }
+            await sb.from('join_requests').delete().eq('id', reqId);
+        } catch(e) {}
+        await fetchAppDataFromSupabase();
+        renderNotifications();
+        showToast(dict[currentLang].toastReq, dict[currentLang].toastJoinRej);
+    }
+
+    function submitClanCreation() {
+        const name = document.getElementById('clan-form-name').value.trim();
+        const tag = document.getElementById('clan-form-tag').value.trim();
+        const desc = document.getElementById('clan-form-desc').value.trim();
+        const fileInput = document.getElementById('clan-form-photo-file');
+
+        if (!name || !tag) {
+            showSiteAlert(currentLang === 'ru' ? 'Пожалуйста, заполните название и тег клана.' : 'Please fill in clan name and tag.');
+            return;
+        }
+
+        if (containsProfanity(name) || containsProfanity(tag) || containsProfanity(desc)) {
+            showSiteAlert(currentLang === 'ru' ? 'Название, тег или описание клана содержат запрещенные слова!' : 'Clan name, tag or description contains forbidden words!');
+            return;
+        }
+
+        const alreadyPending = (appData.pendingClans || []).some(p => p.user_id === currentUser.id);
+        if (alreadyPending) {
+            showSiteAlert(currentLang === 'ru' ? 'У вас уже есть заявка на создание клана, ожидающая проверки администратора!' : 'You already have a pending clan creation request waiting for admin review!');
+            return;
+        }
+
+        showSimpleLoader(currentLang === 'ru' ? 'ОБРАБОТКА...' : 'PROCESSING...');
+        convertFileToBase64(fileInput, async function(base64Photo) {
+            const newClanReq = {
+                id: 'reqclan_' + Date.now(),
+                user_id: currentUser.id,
+                user_name: currentUser.name,
+                name: name,
+                tag: tag,
+                photo: base64Photo && base64Photo.trim() !== '' ? base64Photo : 'https://via.placeholder.com/700x200/25282e/f39c12?text=SO2+CLAN',
+                description: desc
+            };
+
+            try {
+                await sb.from('pending_clans').insert([newClanReq]);
+            } catch(e) {}
+            hideLoader();
+            await fetchAppDataFromSupabase();
+            document.getElementById('status-modal').classList.remove('hidden');
+            showToast('Клан', currentLang === 'ru' ? 'Заявка на создание клана успешно отправлена на модерацию!' : 'Clan creation request successfully submitted!');
+        });
+    }
+
+    function closeStatusModal() {
+        document.getElementById('status-modal').classList.add('hidden');
+        openMainApp();
+    }
+
+    function renderProfile() {
+        if (currentActiveView !== 'profile') return;
+        const d = dict[currentLang];
+        document.getElementById('profile-display-name').innerText = currentUser.name;
+        document.getElementById('profile-display-id').innerText = 'ID: ' + currentUser.id;
+        document.getElementById('profile-avatar-preview').src = currentUser.avatar;
+        document.getElementById('profile-display-bio').innerText = currentUser.bio || d.bioDefault;
+
+        const clanSection = document.getElementById('profile-clan-section');
+        const userClanId = currentUser.clanId || currentUser.clan_id;
+
+        const myJoinReq = (appData.joinRequests || []).find(r => r.user_id === currentUser.id);
+        const myPendingClan = (appData.pendingClans || []).find(p => p.user_id === currentUser.id);
+
+        if (userClanId) {
+            const userClan = appData.clans.find(c => c.id === userClanId);
+            clanSection.innerHTML = `
+                <div style="background: rgba(243,156,18,0.08); border: 1px solid var(--accent-gold); padding: 9px; border-radius: 8px; margin-bottom: 9px; cursor: pointer;" onclick="openClanDetail('${userClanId}')">
+                    <p style="color: var(--text-muted); font-size: 9.5px; margin-bottom: 2px;">${currentLang === 'ru' ? 'ВАШ КЛАН:' : 'YOUR CLAN:'}</p>
+                    <p style="color: var(--accent-gold); font-size: 12.5px; font-weight: bold; margin: 0;">${userClan ? userClan.name + ' ' + userClan.tag : 'Clan'}</p>
+                </div>
+                <button class="btn btn-gold" style="margin-bottom: 4px; padding: 7px;" onclick="openClanDetail('${userClanId}')">[→] ${d.btnGoClan}</button>
+                <button class="btn btn-danger" style="padding: 7px;" onclick="leaveClan()">[✕] ${d.btnLeave}</button>
+            `;
+        } else if (myJoinReq) {
+            const targetClan = appData.clans.find(c => c.id === myJoinReq.clan_id);
+            const clanNameText = targetClan ? `${targetClan.name} ${targetClan.tag}` : (myJoinReq.clan_name || 'Клан');
+            clanSection.innerHTML = `
+                <div style="background: rgba(243,156,18,0.06); border: 1px solid var(--accent-gold); padding: 10px; border-radius: 8px; margin-bottom: 9px; text-align: left;">
+                    <p style="color: var(--accent-gold); font-size: 10px; font-weight: bold; margin-bottom: 3px;">⏳ ${currentLang === 'ru' ? 'ОЖИДАЕТСЯ ОТВЕТ ОТ СОЗДАТЕЛЯ' : 'WAITING FOR CREATOR RESPONSE'}</p>
+                    <p style="color: var(--text-main); font-size: 11px; margin-bottom: 6px;">${currentLang === 'ru' ? 'Заявка на вступление в:' : 'Join request to:'} <b>${clanNameText}</b></p>
+                    <button class="btn btn-danger" style="margin: 0; padding: 6px; font-size: 9.5px;" onclick="cancelMyJoinRequest('${myJoinReq.id}')">[✕] ${currentLang === 'ru' ? 'Отменить заявку' : 'Cancel Request'}</button>
+                </div>
+            `;
+        } else if (myPendingClan) {
+            clanSection.innerHTML = `
+                <div style="background: rgba(52, 152, 219, 0.08); border: 1px solid #3498db; padding: 10px; border-radius: 8px; margin-bottom: 9px; text-align: left;">
+                    <p style="color: #3498db; font-size: 10px; font-weight: bold; margin-bottom: 3px;">🔍 ${currentLang === 'ru' ? 'НА МОДЕРАЦИИ (СТАТУС ПРОВЕРЯЕТСЯ)' : 'UNDER MODERATION'}</p>
+                    <p style="color: var(--text-main); font-size: 11px; margin-bottom: 6px;">${currentLang === 'ru' ? 'Клан:' : 'Clan:'} <b>${myPendingClan.name} ${myPendingClan.tag}</b></p>
+                    <button class="btn btn-danger" style="margin: 0; padding: 6px; font-size: 9.5px;" onclick="cancelMyPendingClan('${myPendingClan.id}')">[✕] ${currentLang === 'ru' ? 'Отменить заявку на клан' : 'Cancel Clan Request'}</button>
+                </div>
+            `;
+        } else {
+            clanSection.innerHTML = `
+                <button class="btn btn-gold" style="background: #27ae60; color: #fff; padding: 8px;" onclick="showCreateClanScreen()">[+] ${currentLang === 'ru' ? 'Создать клан' : 'Create Clan'}</button>
+            `;
+        }
+
+        const exitAdminBtn = document.getElementById('admin-reserve-exit');
+        if (isAdminReserveActive) {
+            document.getElementById('profile-title-mode').innerText = d.profileAdminTitle;
+            exitAdminBtn.style.display = 'block';
+        } else {
+            document.getElementById('profile-title-mode').innerText = d.profileTitle;
+            exitAdminBtn.style.display = 'none';
+        }
+    }
+
+    async function leaveClan() {
+        try {
+            await sb.from('profiles').update({ clan_id: null }).eq('id', currentUser.id);
+        } catch(e) {}
+        currentUser.clanId = null;
+        currentUser.clan_id = null;
+        saveCurrentAccountToSavedList(currentUser);
+        localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+        sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+        await fetchAppDataFromSupabase();
+        renderProfile();
+        showToast(dict[currentLang].toastClanUpd, currentLang === 'ru' ? 'Вы успешно покинули клан.' : 'You left the clan successfully.');
+    }
+
+    function renderNotifications() {
+        if (currentActiveView !== 'notifications') return;
+        const container = document.getElementById('notifications-list');
+        const d = dict[currentLang];
+        
+        let requestsHtml = '';
+        const myRequestsRaw = (appData.joinRequests || []).filter(r => {
+            const clan = appData.clans.find(c => c.id === r.clan_id);
+            return clan && clan.owner_id === currentUser.id;
+        });
+
+        const myRequests = Array.from(new Map(myRequestsRaw.map(r => [r.id, r])).values());
+
+        if (myRequests.length > 0) {
+            requestsHtml = `<h3 style="font-size:11px; text-align:left; color:var(--accent-gold); margin-bottom:7px;">${currentLang === 'ru' ? 'Заявки на вступление в ваш клан:' : 'Join requests for your clan:'}</h3>` + 
+            myRequests.map(req => `
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; margin-bottom: 9px; display: flex; align-items: center; justify-content: space-between; gap: 7px;">
+                    <div style="display: flex; align-items: center; gap: 9px; overflow: hidden;">
+                        <img src="${req.user_avatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; cursor:pointer; flex-shrink: 0;" onclick="viewUserPortfolio('${req.user_id}', '${req.user_name}')">
+                        <div style="text-align: left; overflow: hidden;">
+                            <p style="margin:0; font-size: 11px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <b>${req.user_name}</b>
+                                ${req.unread ? `<span style="background:var(--accent-gold); color:#121316; padding:1px 4px; border-radius:3px; font-size:8.5px; font-weight:bold; margin-left:3px;">[NEW]</span>` : ''}
+                            </p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 5px; flex-shrink: 0;">
+                        <button class="btn btn-gold" style="width: auto; padding: 5px 9px; margin:0; font-size: 9.5px;" onclick="acceptJoinRequest('${req.id}')">${d.btnAccept}</button>
+                        <button class="btn btn-danger" style="width: auto; padding: 5px 9px; margin:0; font-size: 9.5px;" onclick="rejectJoinRequest('${req.id}')">${d.btnReject}</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        const userNotifs = (appData.notifications || []).filter(n => n.user_id === currentUser.id);
+        const uniqueNotifs = Array.from(new Map(userNotifs.map(n => [n.id, n])).values());
+        
+        let genNotifs = uniqueNotifs.map(n => `
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 9px; border-radius: 8px; margin-bottom: 7px;">
+                <p style="margin: 0; color: var(--text-main); text-align: left; font-size: 11px;">
+                    ${n.text}
+                    ${n.unread ? `<span style="background:var(--accent-gold); color:#121316; padding:1px 4px; border-radius:3px; font-size:8.5px; font-weight:bold; margin-left:3px;">[NEW]</span>` : ''}
+                </p>
+            </div>
+        `).join('');
+
+        if (myRequests.length === 0 && uniqueNotifs.length === 0) {
+            container.innerHTML = `<p>${d.notifEmpty}</p>`;
+        } else {
+            container.innerHTML = requestsHtml + '<br>' + genNotifs;
+        }
+    }
+
+    function openAdminLoginModal() {
+        document.getElementById('admin-login-modal').classList.remove('hidden');
+    }
+
+    function closeAdminLoginModal() {
+        document.getElementById('admin-login-modal').classList.add('hidden');
+    }
+
+    function tryLoginAdmin() {
+        const adminId = document.getElementById('admin-input-id').value.trim();
+        const adminPass = document.getElementById('admin-input-pass').value.trim();
+
+        if (adminId === '200009009' && adminPass === 'umnov2009') {
+            closeAdminLoginModal();
+            
+            regularUserSession = JSON.parse(JSON.stringify(currentUser));
+            isAdminReserveActive = true;
+
+            localStorage.setItem('so2fam_admin_active', 'true');
+            localStorage.setItem('so2fam_regular_user', JSON.stringify(regularUserSession));
+
+            currentUser.id = '200009009';
+            currentUser.name = 'Administrator [Reserve]';
+            currentUser.avatar = 'https://via.placeholder.com/150/f39c12/121316?text=ADMIN';
+            currentUser.clanId = '1';
+
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('screen-main').classList.remove('hidden');
+            switchView('admin-panel');
+            renderAdminRequests();
+            showToast('Админ-панель', currentLang === 'ru' ? 'Успешный вход в режим администратора' : 'Successfully logged in as administrator');
+        } else {
+            showSiteAlert(currentLang === 'ru' ? 'Неверный ID администратора или пароль.' : 'Invalid Admin ID or password.');
+        }
+    }
+
+    function exitAdminReserveAccount() {
+        if (regularUserSession) {
+            currentUser = regularUserSession;
+            regularUserSession = null;
+            isAdminReserveActive = false;
+            
+            localStorage.removeItem('so2fam_admin_active');
+            localStorage.removeItem('so2fam_regular_user');
+
+            stopChatPolling();
+            openMainApp();
+            showSiteAlert(currentLang === 'ru' ? 'Возврат на ваш основной пользовательский аккаунт выполнен успешно.' : 'Successfully returned to your main user account.');
+            showToast('Аккаунт', currentLang === 'ru' ? 'Возврат в обычный профиль' : 'Returned to standard profile');
+        }
+    }
+
+    function renderAdminRequests() {
+        const container = document.getElementById('admin-requests-list');
+        const d = dict[currentLang];
+        if (!appData.pendingClans || appData.pendingClans.length === 0) {
+            container.innerHTML = `<p style="text-align: left;">${d.adminEmpty}</p>`;
+            return;
+        }
+
+        container.innerHTML = appData.pendingClans.map(req => `
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 10px; width: 100%; overflow: hidden;">
+                <img src="${req.photo}" style="width:100%; height:100px; object-fit:cover;" alt="Banner">
+                <div style="padding: 10px;">
+                    <p style="text-align: left; margin-bottom: 3px; font-size: 11px;"><b>${currentLang === 'ru' ? 'Создатель:' : 'Creator:'}</b> ${req.user_name} (ID: ${req.user_id})</p>
+                    <p style="text-align: left; margin-bottom: 3px; font-size: 11px;"><b>${currentLang === 'ru' ? 'Клан:' : 'Clan:'}</b> ${req.name} | <b>${currentLang === 'ru' ? 'Тег:' : 'Tag:'}</b> ${req.tag}</p>
+                    <p style="text-align: left; margin-bottom: 9px; font-size: 11px;"><b>${currentLang === 'ru' ? 'Описание:' : 'Description:'}</b> ${req.description || (currentLang === 'ru' ? 'Нет описания' : 'No description')}</p>
+                    <div style="display: flex; gap: 7px;">
+                        <button class="btn btn-gold" style="margin: 0; padding: 7px;" onclick="approveClan('${req.id}')">[✓] Принять</button>
+                        <button class="btn btn-danger" style="margin: 0; padding: 7px;" onclick="openRejectModal('${req.id}')">[✕] Отклонить</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function approveClan(reqId) {
+        showSimpleLoader(currentLang === 'ru' ? 'СОЗДАНИЕ...' : 'CREATING...');
+        const req = appData.pendingClans.find(r => r.id === reqId);
+        if (!req) { hideLoader(); return; }
+
+        const newClanId = 'clan_' + Date.now();
+        const newClan = {
+            id: newClanId,
+            name: req.name,
+            tag: req.tag,
+            photo: req.photo && req.photo.trim() !== '' ? req.photo : 'https://via.placeholder.com/700x200/25282e/f39c12?text=SO2+CLAN',
+            description: req.description,
+            owner_id: req.user_id
+        };
+
+        try {
+            await sb.from('clans').insert([newClan]);
+            await sb.from('profiles').update({ clan_id: newClanId }).eq('id', req.user_id);
+            await sb.from('pending_clans').delete().eq('id', reqId);
+
+            const notif = {
+                id: Date.now() + '_' + Math.floor(Math.random()*1000),
+                user_id: req.user_id,
+                text: currentLang === 'ru' ? `Поздравляем! Ваш клан "${req.name}" ${req.tag} успешно создан и одобрен администратором!` : `Congratulations! Your clan "${req.name}" ${req.tag} has been successfully created and approved!`,
+                unread: true
+            };
+            await sb.from('notifications').insert([notif]);
+        } catch(e) {}
+
+        if (req.user_id === currentUser.id) {
+            currentUser.clanId = newClanId;
+            currentUser.clan_id = newClanId;
+            saveCurrentAccountToSavedList(currentUser);
+            localStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+            sessionStorage.setItem('so2fam_current_user', JSON.stringify(currentUser));
+        }
+
+        hideLoader();
+        await fetchAppDataFromSupabase();
+        renderAdminRequests();
+        showToast(dict[currentLang].toastMod, `Clan "${req.name}" ${dict[currentLang].toastApproved}`);
+    }
+
+    function openRejectModal(reqId) {
+        currentRejectingClanId = reqId;
+        document.getElementById('admin-reject-modal').classList.remove('hidden');
+    }
+
+    function closeRejectModal() {
+        currentRejectingClanId = null;
+        document.getElementById('admin-reject-modal').classList.add('hidden');
+    }
+
+    async function confirmRejectClan() {
+        const reason = document.getElementById('reject-reason-input').value.trim();
+        if (!reason) {
+            showSiteAlert(currentLang === 'ru' ? 'Введите причину отклонения.' : 'Please enter a rejection reason.');
+            return;
+        }
+
+        showSimpleLoader(currentLang === 'ru' ? 'ОТКЛОНЕНИЕ...' : 'REJECTING...');
+        const req = appData.pendingClans.find(r => r.id === currentRejectingClanId);
+        if (req) {
+            try {
+                await sb.from('pending_clans').delete().eq('id', currentRejectingClanId);
+                const notifText = currentLang === 'ru' ? `Ваша заявка на создание клана "${req.name}" отклонена администратором. Причина: ${reason}` : `Your clan creation request for "${req.name}" was rejected. Reason: ${reason}`;
+                const notif = {
+                    id: Date.now() + '_' + Math.floor(Math.random()*1000),
+                    user_id: req.user_id,
+                    text: notifText,
+                    unread: true
+                };
+                await sb.from('notifications').insert([notif]);
+            } catch(e) {}
+        }
+
+        hideLoader();
+        closeRejectModal();
+        await fetchAppDataFromSupabase();
+        renderAdminRequests();
+        showToast(dict[currentLang].toastMod, dict[currentLang].toastRejected);
+    }
+</script>
+
+</body>
+</html>
